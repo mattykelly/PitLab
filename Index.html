@@ -1,0 +1,2199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PitLab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0a;--surface:#131313;--card:#181818;--border:#252525;
+  --ember:#ff4500;--ember-dim:#7a2000;--gold:#f5a623;
+  --smoke:#777;--text:#ede9e1;--text-dim:#444;
+  --green:#22c55e;--red:#ef4444;--blue:#60a5fa;--purple:#a78bfa;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100dvh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;opacity:.35;pointer-events:none;z-index:999;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E")}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px 10px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(10,10,10,.97);backdrop-filter:blur(16px);z-index:100}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--ember);line-height:1}
+.logo-sub{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-top:-1px}
+.status-pill{display:flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10px;padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--smoke);transition:all .3s}
+.status-pill.on{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.07)}
+.sdot{width:6px;height:6px;border-radius:50%;background:currentColor}
+.status-pill.on .sdot{animation:blink 1.6s ease infinite}
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.3;transform:scale(.65)}}
+
+main{padding:18px;max-width:460px;margin:0 auto;padding-bottom:52px}
+.screen{display:none}.screen.active{display:block}
+
+/* ── CHAT SCREEN ── */
+#screen-chat{padding-top:20px}
+.chat-flame{width:60px;height:60px;margin:0 auto 14px}
+.chat-flame svg{width:100%;height:100%;animation:flicker 2s ease-in-out infinite alternate}
+@keyframes flicker{0%{transform:scale(1) rotate(-1deg);filter:drop-shadow(0 0 10px rgba(255,69,0,.65))}100%{transform:scale(1.05) rotate(1deg);filter:drop-shadow(0 0 18px rgba(255,69,0,.95))}}
+.chat-title{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:2px;text-align:center;margin-bottom:3px}
+.chat-subtitle{color:var(--smoke);font-size:13px;text-align:center;margin-bottom:16px}
+
+/* RESUME BANNER */
+.resume-banner{background:var(--card);border:1px solid var(--ember);border-radius:10px;padding:14px 16px;margin-bottom:14px;display:none}
+.resume-banner h4{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--ember);margin-bottom:6px}
+.resume-banner p{font-size:13px;color:var(--smoke);margin-bottom:12px;line-height:1.4}
+.resume-btns{display:flex;gap:8px}
+.rbtn{flex:1;padding:9px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;letter-spacing:1px}
+.rbtn.hot{background:var(--ember);border-color:var(--ember);color:#fff}
+.rbtn:active{transform:scale(.96)}
+
+/* API KEY */
+.api-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.api-card-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text-dim);margin-bottom:9px}
+.api-row{display:flex;gap:8px}
+.api-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px 11px;outline:none;letter-spacing:1px}
+.api-input:focus{border-color:var(--ember)}
+.api-save-btn{background:var(--ember);color:#fff;border:none;border-radius:5px;padding:8px 13px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;letter-spacing:1px}
+.api-save-btn:active{transform:scale(.96)}
+.api-hint{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:6px;line-height:1.5}
+.api-status{font-size:10px;font-family:'DM Mono',monospace;margin-top:5px}
+.api-status.ok{color:var(--green)}.api-status.err{color:var(--red)}
+.share-badge{display:flex;align-items:center;gap:8px;margin-bottom:10px;font-family:'DM Mono',monospace;font-size:11px;color:var(--smoke)}
+.share-orb{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background .3s}
+.share-orb.on{background:var(--green);animation:blink 2s ease infinite}
+.api-divider{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);text-align:center;margin:12px 0;letter-spacing:2px}
+.inline-key-banner{background:var(--card);border:1px solid var(--border);border-radius:7px;padding:12px 14px;margin-top:8px;display:none}
+.inline-key-banner.visible{display:block}
+.inline-key-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:8px}
+.inline-key-row{display:flex;gap:7px}
+.inline-key-input{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:8px 10px;outline:none;letter-spacing:1px}
+.inline-key-input:focus{border-color:var(--ember)}
+.inline-key-btn{background:var(--ember);color:#fff;border:none;border-radius:4px;padding:8px 13px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;letter-spacing:1px}
+.inline-key-btn:active{transform:scale(.96)}
+.inline-key-hint{font-size:10px;color:var(--text-dim);font-family:'DM Mono',monospace;margin-top:6px}
+
+/* CONVO */
+.convo-box{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
+.convo-messages{padding:13px;min-height:90px;max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
+.convo-messages::-webkit-scrollbar{width:3px}
+.convo-messages::-webkit-scrollbar-thumb{background:var(--border)}
+.bubble{max-width:88%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;animation:bubin .3s cubic-bezier(.34,1.56,.64,1)}
+@keyframes bubin{from{opacity:0;transform:scale(.92)}to{opacity:1;transform:scale(1)}}
+.bubble.ai{background:var(--surface);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px;align-self:flex-start}
+.bubble.user{background:var(--ember);color:#fff;border-bottom-right-radius:3px;align-self:flex-end}
+.convo-input-row{display:flex;border-top:1px solid var(--border)}
+.convo-input{flex:1;background:transparent;border:none;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:11px 13px;outline:none}
+.convo-input::placeholder{color:var(--text-dim)}
+.convo-send{background:transparent;border:none;border-left:1px solid var(--border);color:var(--ember);padding:11px 15px;cursor:pointer;font-size:18px;transition:all .2s}
+.convo-send:active{transform:scale(.88)}
+.quick-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{background:var(--surface);border:1px solid var(--border);color:var(--smoke);font-family:'DM Mono',monospace;font-size:10px;padding:6px 11px;border-radius:16px;cursor:pointer;transition:all .2s}
+.chip:active,.chip:hover{border-color:var(--ember);color:var(--ember)}
+.start-cook-btn{background:var(--ember);color:#fff;border:none;padding:14px;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;border-radius:5px;cursor:pointer;width:100%;transition:all .2s;position:relative;overflow:hidden;display:none}
+.start-cook-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,rgba(255,255,255,.1),transparent)}
+.start-cook-btn:active{transform:scale(.97)}
+.start-cook-btn.show{display:block}
+
+/* ── COOK SCREEN ── */
+.slabel{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--text-dim);text-transform:uppercase;margin-bottom:9px;margin-top:20px}
+.probes-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+
+/* regular probe card */
+.probe-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px;position:relative;overflow:hidden;transition:border-color .3s}
+.probe-card.active{border-color:var(--ember)}
+.probe-card.active::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,var(--ember),var(--gold))}
+.probe-card.inactive{opacity:.38}
+/* Role colours — applied by updateProbeRoles() */
+.probe-card.role-meat{border-color:var(--red)}
+.probe-card.role-meat::before{background:linear-gradient(to right,var(--red),#f87171)}
+.probe-card.role-meat .ptemp{color:var(--red)}
+.probe-card.role-pit{border-color:var(--blue)}
+.probe-card.role-pit::before{background:linear-gradient(to right,var(--blue),#93c5fd)}
+.probe-card.role-pit .ptemp{color:var(--blue)}
+.eta-card.role-eta{border-color:var(--green)}
+.eta-card.role-eta::before{background:linear-gradient(to right,var(--green),#86efac)}
+.plbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--smoke);margin-bottom:4px}
+.ptemp{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;color:var(--text);transition:color .3s}
+.probe-card.active .ptemp{color:var(--ember)}
+.punit{font-family:'DM Mono',monospace;font-size:12px;color:var(--smoke);margin-left:1px}
+.ptrend{font-size:10px;font-family:'DM Mono',monospace;margin-top:3px;color:var(--smoke);min-height:14px}
+.pname{background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--smoke);font-size:10px;font-family:'DM Mono',monospace;width:100%;margin-top:5px;padding:2px 0;outline:none}
+.pname:focus{border-color:var(--ember);color:var(--text)}
+
+/* ETA card (replaces unused probe slot) */
+.eta-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.eta-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,var(--purple),var(--blue))}
+.eta-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--smoke);margin-bottom:6px}
+.eta-time{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1;color:var(--gold);margin-bottom:2px}
+.eta-rel{font-family:'DM Mono',monospace;font-size:10px;color:var(--smoke);margin-bottom:8px}
+.eta-conf-bar{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.eta-conf-fill{height:100%;border-radius:2px;transition:width .8s ease}
+.eta-conf-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)}
+.eta-stall{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);margin-top:4px}
+
+.row2{display:flex;gap:8px;margin-top:9px;align-items:center}
+.unit-toggle{display:flex;background:var(--surface);border:1px solid var(--border);border-radius:4px;overflow:hidden}
+.ubtn{padding:7px 14px;border:none;background:transparent;color:var(--smoke);font-family:'DM Mono',monospace;font-size:11px;cursor:pointer;transition:all .2s}
+.ubtn.active{background:var(--ember);color:#fff}
+.batt-row{display:flex;align-items:center;gap:7px;flex:1;font-family:'DM Mono',monospace;font-size:10px;color:var(--smoke)}
+.batt-track{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.batt-fill{height:100%;background:var(--green);border-radius:2px;transition:width .5s}
+
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:13px}
+canvas#tempChart{width:100%!important;height:170px!important}
+#etaBadge{display:none;align-items:center;gap:8px;margin-top:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:9px 13px;font-family:'DM Mono',monospace;font-size:11px;color:var(--gold)}
+
+/* AI */
+.ai-wrap{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:9px}
+.ai-head{display:flex;align-items:center;justify-content:space-between;background:var(--card);padding:10px 13px;border-bottom:1px solid var(--border)}
+.ai-title{display:flex;align-items:center;gap:7px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--purple)}
+.ai-orb{width:7px;height:7px;border-radius:50%;background:var(--purple);flex-shrink:0}
+.ai-orb.thinking{animation:aipulse 1s ease infinite}
+@keyframes aipulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(1.6)}}
+.ai-tally{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)}
+.ai-feed{background:var(--card);min-height:68px;max-height:280px;overflow-y:auto}
+.ai-feed::-webkit-scrollbar{width:3px}
+.ai-feed::-webkit-scrollbar-thumb{background:var(--border)}
+.ai-msg{padding:12px 14px;border-bottom:1px solid var(--border);animation:msgin .3s ease}
+.ai-msg:last-child{border-bottom:none}
+@keyframes msgin{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.ai-meta{display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.ai-tag{font-family:'DM Mono',monospace;font-size:8px;letter-spacing:2px;padding:2px 7px;border-radius:10px;border:1px solid}
+.ai-tag.insight{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.08)}
+.ai-tag.warning{border-color:var(--gold);color:var(--gold);background:rgba(245,166,35,.08)}
+.ai-tag.tip{border-color:var(--blue);color:var(--blue);background:rgba(96,165,250,.08)}
+.ai-tag.milestone{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.08)}
+.ai-ts{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim)}
+.ai-text{font-size:13px;line-height:1.55;color:var(--text)}
+.ai-empty{display:flex;flex-direction:column;align-items:center;padding:22px 16px;color:var(--text-dim);font-family:'DM Mono',monospace;font-size:10px;text-align:center;gap:7px}
+.ai-empty-ico{font-size:22px;opacity:.3}
+.ask-row{display:flex;gap:7px;margin-top:8px}
+.ask-input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:10px 12px;outline:none}
+.ask-input:focus{border-color:var(--purple)}
+.ask-btn{background:rgba(167,139,250,.12);border:1px solid var(--purple);color:var(--purple);border-radius:5px;padding:10px 13px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer;transition:all .2s;white-space:nowrap}
+.ask-btn:active{transform:scale(.94)}
+.ask-btn:disabled{opacity:.35;cursor:not-allowed}
+
+/* ALERTS & LOG */
+.alert-row{display:flex;align-items:center;gap:8px;margin-top:7px}
+.alert-inp{flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:7px 10px;outline:none}
+.alert-inp:focus{border-color:var(--ember)}
+.albl{font-size:11px;color:var(--smoke);font-family:'DM Mono',monospace;min-width:30px}
+.freq-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.freq-lbl{font-family:'DM Mono',monospace;font-size:10px;color:var(--smoke);white-space:nowrap}
+.freq-sel{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:6px 10px;border-radius:4px;outline:none;flex:1;cursor:pointer}
+.freq-sel:focus{border-color:var(--ember)}
+.log-box{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-height:190px;overflow-y:auto}
+.log-box::-webkit-scrollbar{width:3px}
+.log-box::-webkit-scrollbar-thumb{background:var(--border)}
+table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:10px}
+th{background:var(--surface);padding:7px 10px;text-align:left;color:var(--text-dim);font-weight:400;letter-spacing:1px;position:sticky;top:0;font-size:8px}
+td{padding:6px 10px;border-top:1px solid var(--border);color:var(--smoke)}
+tr:hover td{background:rgba(255,255,255,.015)}
+td.tv{color:var(--text)}
+.ctrl-row{display:flex;gap:8px;margin-top:10px}
+.btn{flex:1;padding:11px;border-radius:4px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all .2s}
+.btn:active{transform:scale(.95)}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.primary{border-color:var(--ember);color:var(--ember);background:rgba(255,69,0,.06)}
+#disc-banner{display:none;background:rgba(239,68,68,.09);border:1px solid var(--red);color:var(--red);border-radius:6px;padding:8px 12px;font-size:11px;font-family:'DM Mono',monospace;margin-bottom:12px;align-items:center;gap:8px}
+
+/* HISTORY */
+.hist-section{margin-top:10px}
+.hist-item{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:11px 13px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center}
+.hist-meta{font-family:'DM Mono',monospace;font-size:10px;color:var(--smoke)}
+.hist-meat{font-size:13px;color:var(--text);margin-bottom:2px}
+.hist-del{background:transparent;border:none;color:var(--text-dim);font-size:14px;cursor:pointer;padding:4px}
+.hist-del:hover{color:var(--red)}
+.hist-empty{font-family:'DM Mono',monospace;font-size:11px;color:var(--text-dim);text-align:center;padding:16px}
+
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);border:1px solid var(--border);color:var(--text);padding:9px 18px;border-radius:20px;font-family:'DM Mono',monospace;font-size:11px;z-index:9999;transition:transform .3s cubic-bezier(.34,1.56,.64,1);white-space:nowrap;max-width:88vw;text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header>
+  <div><div class="logo">PitLab</div><div class="logo-sub">BBQ MONITOR + AI ADVISOR</div></div>
+  <div class="status-pill" id="statusPill"><div class="sdot"></div><span id="statusTxt">OFFLINE</span></div>
+</header>
+
+<main>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 1 — SETUP CHAT
+══════════════════════════════════════════ -->
+<div class="screen active" id="screen-chat">
+  <div class="chat-flame">
+    <svg viewBox="0 0 60 80" fill="none">
+      <path d="M30 75C30 75 8 60 8 38C8 22 18 10 30 5C30 5 24 18 30 25C30 25 28 12 42 8C42 8 50 20 44 32C44 32 52 26 50 14C50 14 58 24 56 40C54 56 44 68 30 75Z" fill="url(#fg1)"/>
+      <path d="M30 65C30 65 18 55 18 42C18 34 24 28 30 25C30 25 27 33 32 38C32 38 30 30 38 27C38 27 42 34 38 42C38 42 44 38 42 30C42 30 48 38 46 46C44 54 38 62 30 65Z" fill="url(#fg2)"/>
+      <defs>
+        <linearGradient id="fg1" x1="30" y1="5" x2="30" y2="75" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#ff4500"/><stop offset="100%" stop-color="#7a2000"/></linearGradient>
+        <linearGradient id="fg2" x1="30" y1="25" x2="30" y2="65" gradientUnits="userSpaceOnUse"><stop offset="0%" stop-color="#f5a623"/><stop offset="100%" stop-color="#ff4500"/></linearGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="chat-title">PitLab</div>
+  <div class="chat-subtitle">Your AI pit advisor. Let's set up your cook.</div>
+
+  <!-- RESUME BANNER -->
+  <div class="resume-banner" id="resumeBanner">
+    <h4>COOK IN PROGRESS</h4>
+    <p id="resumeDesc">Resume where you left off?</p>
+    <div id="resumeKeyRow" style="display:none;margin-bottom:10px">
+      <div style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;color:var(--text-dim);margin-bottom:6px">API KEY NEEDED FOR AI ADVISOR</div>
+      <div style="display:flex;gap:7px">
+        <input id="resumeKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off"
+          style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:7px 10px;outline:none"/>
+        <button onclick="saveResumeKey()" style="background:var(--ember);color:#fff;border:none;border-radius:4px;padding:7px 12px;font-family:'DM Mono',monospace;font-size:10px;cursor:pointer">SAVE</button>
+      </div>
+    </div>
+    <div class="resume-btns">
+      <button class="rbtn hot" onclick="resumeCook()">RESUME COOK</button>
+      <button class="rbtn" onclick="discardAndNew()">START FRESH</button>
+    </div>
+  </div>
+
+  <!-- API KEY -->
+  <!-- PITLAB CENTRAL / API KEY CARD -->
+  <div class="api-card" id="accessCard">
+    <div class="api-card-label">AI ADVISOR ACCESS</div>
+
+    <!-- SHARING PATH -->
+    <div id="sharingPanel">
+      <div class="share-badge" id="shareBadge">
+        <div class="share-orb" id="shareOrb"></div>
+        <span id="shareLabel">Not connected to PitLab Central</span>
+      </div>
+      <div class="api-hint" id="shareHint" style="margin-bottom:10px">
+        Share your cook data anonymously with PitLab Central and get the AI advisor for free.
+        No personal data — just temperature curves and cook metadata.
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="api-save-btn" id="shareOptInBtn" onclick="optInSharing()" style="flex:1">JOIN PITLAB CENTRAL</button>
+        <button class="api-save-btn" id="shareOptOutBtn" onclick="optOutSharing()" style="display:none;background:var(--border);color:var(--smoke);flex:1">LEAVE</button>
+      </div>
+      <div class="api-status" id="shareStatus"></div>
+    </div>
+
+    <div class="api-divider" id="apiDivider">— or use your own key —</div>
+
+    <!-- OWN KEY PATH -->
+    <div id="ownKeyPanel">
+      <div class="api-row">
+        <input class="api-input" id="apiKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off"/>
+        <button class="api-save-btn" onclick="saveApiKey()">SAVE</button>
+      </div>
+      <div class="api-hint">Stored on this device only · console.anthropic.com</div>
+      <div class="api-status" id="apiStatus"></div>
+    </div>
+  </div>
+
+  <!-- CONVERSATION -->
+  <div class="convo-box">
+    <div class="convo-messages" id="convoMessages"></div>
+    <div class="convo-input-row">
+      <input class="convo-input" id="convoInput" placeholder="Type your answer…" autocomplete="off"/>
+      <button class="convo-send" onclick="sendConvoMsg()">↑</button>
+    </div>
+  </div>
+  <div class="quick-chips" id="quickChips"></div>
+  <button class="start-cook-btn" id="startCookBtn" onclick="startCook()">FIRE IT UP →</button>
+
+  <!-- COOK HISTORY -->
+  <div class="slabel" style="margin-top:22px">Past Cooks</div>
+  <div id="histList" class="hist-section"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCREEN 2 — COOK
+══════════════════════════════════════════ -->
+<div class="screen" id="screen-cook">
+  <div id="disc-banner">⚠ Device disconnected — data preserved</div>
+  <div class="slabel">Live Probes</div>
+  <div class="probes-grid" id="probesGrid"></div>
+
+  <div class="row2">
+    <div class="unit-toggle">
+      <button class="ubtn active" id="btnF" onclick="setUnit('F')">°F</button>
+      <button class="ubtn" id="btnC" onclick="setUnit('C')">°C</button>
+    </div>
+    <div class="batt-row">
+      <span>🔋</span>
+      <div class="batt-track"><div class="batt-fill" id="battFill" style="width:0%"></div></div>
+      <span id="battTxt">--</span>
+    </div>
+  </div>
+
+  <div class="slabel">Temperature Chart</div>
+  <div class="chart-box"><canvas id="tempChart"></canvas></div>
+  <div id="etaBadge"></div>
+
+  <div class="slabel" style="margin-top:20px">Pit Advisor <span style="color:var(--purple);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px">AI</span></div>
+  <div class="ai-wrap">
+    <div class="ai-head">
+      <div class="ai-title"><div class="ai-orb" id="aiOrb"></div><span id="aiStatusTxt">WATCHING YOUR COOK</span></div>
+      <div class="ai-tally" id="aiTally">0 / 8 insights</div>
+    </div>
+    <div class="ai-feed" id="aiFeed">
+      <div class="ai-empty"><div class="ai-empty-ico">🔥</div><div>Insights appear as your cook develops.</div></div>
+    </div>
+  </div>
+  <div class="ask-row">
+    <input class="ask-input" id="askInput" placeholder="Ask anything about your cook…"/>
+    <button class="ask-btn" id="askBtn" onclick="askAdvisor()">ASK</button>
+  </div>
+  <div class="inline-key-banner" id="inlineKeyBanner">
+    <div class="inline-key-label">API KEY NEEDED FOR AI ADVISOR</div>
+    <div class="inline-key-row">
+      <input class="inline-key-input" id="inlineKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off"/>
+      <button class="inline-key-btn" onclick="saveInlineKey()">SAVE</button>
+    </div>
+    <div class="inline-key-hint">Stored on device only · <span style="color:var(--ember)">console.anthropic.com</span></div>
+  </div>
+
+  <div class="slabel">Alerts</div>
+  <div class="alert-row"><span class="albl">🔴 HI</span><input class="alert-inp" id="alertHigh" type="number" placeholder=""/></div>
+  <div class="alert-row"><span class="albl">🔵 LO</span><input class="alert-inp" id="alertLow" type="number" placeholder=""/></div>
+
+  <div class="slabel">Session Log</div>
+  <div class="freq-row">
+    <span class="freq-lbl">Log every</span>
+    <select class="freq-sel" id="freqSel" onchange="updateFreq()">
+      <option value="15">15 seconds</option>
+      <option value="30" selected>30 seconds</option>
+      <option value="60">1 minute</option>
+      <option value="120">2 minutes</option>
+      <option value="300">5 minutes</option>
+      <option value="600">10 minutes</option>
+    </select>
+  </div>
+  <div class="log-box">
+    <table>
+      <thead><tr><th>TIME</th><th id="lh0">P1</th><th id="lh1">P2</th><th id="lh2">P3</th><th id="lh3">P4</th></tr></thead>
+      <tbody id="logBody"><tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px">No data yet</td></tr></tbody>
+    </table>
+  </div>
+  <div class="ctrl-row">
+    <button class="btn primary" onclick="exportCSV()">EXPORT CSV</button>
+    <button class="btn danger" onclick="endSession()">END SESSION</button>
+  </div>
+</div>
+
+</main>
+<div class="toast" id="toast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS — all internal temps in °C
+// ═══════════════════════════════════════════════════════
+const SVC=0xFFF0,C_VER=0xFFF2,C_CTL=0xFFF5,C_TMP=0xFFF4,C_BAT=0xFFF1;
+const CRED=new Uint8Array([0x21,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0xb8,0x22,0x00,0x00,0x00,0x00,0x00]);
+const RTCMD=new Uint8Array([0x0B,0x01,0x00,0x00,0x00,0x00]);
+const COLORS=['#ff4500','#f5a623','#60a5fa','#22c55e'];
+// Device sends -1.0°C (raw -10) for unplugged probes, and values >300°C are garbage
+const isUnplugged=c=>c===null||c<-0.5||c>500;
+
+// isInMeat: true only when a probe reading looks like it's actually inside food
+// rather than dangling in ambient smoker air. Requires temp > 40°C AND
+// at least 8°C above the lowest other active probe (the ambient reference).
+// This prevents an ambient-temp probe from triggering flipToProbeCard.
+function isInMeat(idx, tempC){
+  if(isUnplugged(tempC))return false;
+  if(tempC<40)return false; // below 104°F — definitely not in cooking meat
+  // Find the lowest active temp among other probes (likely ambient)
+  let lowestOther=Infinity;
+  for(let j=0;j<Math.max(4,probeCount);j++){
+    if(j===idx)continue;
+    const t=temps[j];
+    if(!isUnplugged(t))lowestOther=Math.min(lowestOther,t);
+  }
+  // Must be at least 8°C above ambient, OR no ambient reference available
+  if(lowestOther===Infinity)return tempC>45;
+  return tempC>lowestOther+8;
+}
+const MEATS=['Brisket','Pork Butt','Pork Ribs','Pulled Pork','Whole Chicken','Chicken Thighs','Beef Ribs','Lamb Shoulder','Salmon','Other'];
+// Default target temps in °C
+const MEAT_TARGETS={brisket:94.4,'pork butt':93.3,'pulled pork':93.3,'pork ribs':90.5,chicken:73.9,'chicken thighs':79.4,'beef ribs':93.3,lamb:90.6,salmon:62.8};
+const LS_KEY_CURRENT='pl_current_cook';
+const LS_KEY_HISTORY='pl_cook_history';
+const LS_KEY_API='pl_apikey';
+const LS_KEY_UNIT='pl_unit';
+const LS_KEY_SHARING='pl_sharing';       // 'on' | 'off' | null (not yet decided)
+const LS_KEY_USER_ID='pl_user_id';       // anonymous uuid assigned on first share opt-in
+
+// PitLab Central — replace with your deployed endpoint
+// When sharing is on, AI calls are proxied here (no user API key needed)
+// When sharing is off, calls go direct to Anthropic with user's key
+const PITLAB_CENTRAL_URL='https://matthewjkelly--16822cd2316c11f18b7842dde27851f2.web.val.run';
+const PITLAB_AI_LIMIT=40; // free AI calls per cook when sharing
+
+// ═══════════════════════════════════════════════════════
+// GLOBAL STATE
+// ═══════════════════════════════════════════════════════
+let apiKey='';
+let sharingEnabled=false;   // true = user opted into PitLab Central
+let pitlabUserId=null;      // anonymous id for this device
+let sharedAiCallsThisSession=0; // track against PITLAB_AI_LIMIT
+let unit='F'; // display unit — all storage/logic uses °C
+let device=null,server=null;
+let temps=[null,null,null,null]; // live rawC values
+let probeCount=4;
+let probeNames=['Probe 1','Probe 2','Probe 3','Probe 4'];
+let probeActive=[false,false,false,false]; // true once valid data received
+let unplugStreak=[0,0,0,0]; // consecutive unplugged BLE readings per probe
+const UNPLUG_THRESHOLD=5; // ~5 seconds of -1 readings = confirm absent
+
+let sessionLog=[];    // {ts,label,rawC:[...],rawC is always °C}
+let lastLogTs=0,logFreqMs=30000;
+let chart=null,chartData=null;
+let cookStartTime=null;
+let alertCooldown=false;
+let cookId=null; // uuid for current cook
+
+// Cook context — stored in °C, target can come from temp or finish time
+let cookCtx={
+  meat:'',
+  targetC:null,       // internal target always °C
+  pitC:null,          // pit temp °C
+  weightKg:null,
+  finishTime:null,    // epoch ms — if user gave a finish time
+  notes:''
+};
+
+// AI
+let aiCount=0,AI_MAX=8;
+let lastDisplayedMins=null; // for ETA damping
+let aiLastCall=0,aiInterval=null,aiThinking=false;
+let aiFlags={stall:false,wrap:false,approach:false,spike:false,drop:false,milestones:new Set()};
+let aiMessages=[]; // {type,text,ts} for persistence
+
+let convoStep=0,convoReady=false;
+
+// ═══════════════════════════════════════════════════════
+// UNIT HELPERS — single source of truth
+// ═══════════════════════════════════════════════════════
+const toF=c=>c*9/5+32;
+const toC=f=>(f-32)*5/9;
+const inUnit=c=>c===null?null:(unit==='F'?toF(c):c);
+const fromUnit=v=>v===null?null:(unit==='F'?toC(v):v); // display→°C
+const fmtTemp=c=>c===null?'---':inUnit(c).toFixed(1);
+const unitLabel=()=>unit==='F'?'°F':'°C';
+const dispTemp=v=>v===null?'---':v.toFixed(1); // already in display unit
+
+// ═══════════════════════════════════════════════════════
+// PERSISTENCE — localStorage
+// ═══════════════════════════════════════════════════════
+function saveCurrentCook(){
+  if(!cookId)return;
+  const state={
+    cookId,cookStartTime,cookCtx,cookStats,
+    probeNames,probeCount,probeActive,
+    sessionLog,aiCount,aiMessages,aiFlags:{...aiFlags,milestones:[...aiFlags.milestones]},
+    unit,logFreqMs
+  };
+  try{localStorage.setItem(LS_KEY_CURRENT,JSON.stringify(state));}catch(e){}
+}
+
+function loadCurrentCook(){
+  try{
+    const raw=localStorage.getItem(LS_KEY_CURRENT);
+    if(!raw)return null;
+    const s=JSON.parse(raw);
+    s.aiFlags.milestones=new Set(s.aiFlags.milestones);
+    return s;
+  }catch(e){return null;}
+}
+
+function clearCurrentCook(){
+  localStorage.removeItem(LS_KEY_CURRENT);
+}
+
+function archiveCook(){
+  if(!sessionLog.length)return;
+  try{
+    const history=JSON.parse(localStorage.getItem(LS_KEY_HISTORY)||'[]');
+    history.unshift({
+      cookId,meat:cookCtx.meat,
+      startTime:cookStartTime,
+      endTime:Date.now(),
+      targetC:cookCtx.targetC,
+      entries:sessionLog.length,
+      finalTemps:sessionLog[sessionLog.length-1]?.rawC||[]
+    });
+    // Keep last 20 cooks
+    localStorage.setItem(LS_KEY_HISTORY,JSON.stringify(history.slice(0,20)));
+  }catch(e){}
+}
+
+function loadHistory(){
+  try{return JSON.parse(localStorage.getItem(LS_KEY_HISTORY)||'[]');}
+  catch(e){return[];}
+}
+
+function renderHistory(){
+  const list=document.getElementById('histList');
+  const history=loadHistory();
+  if(!history.length){list.innerHTML='<div class="hist-empty">No previous cooks yet</div>';return;}
+  list.innerHTML=history.map((h,idx)=>{
+    const date=new Date(h.startTime).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    const dur=h.endTime?Math.round((h.endTime-h.startTime)/60000)+'min':'ongoing';
+    const finalC=h.finalTemps?.[0];
+    const finalStr=finalC!=null?` · finished ${fmtTempC(finalC)}`:'';
+    return `<div class="hist-item">
+      <div>
+        <div class="hist-meat">${h.meat||'Unknown'}</div>
+        <div class="hist-meta">${date} · ${dur}${finalStr}</div>
+      </div>
+      <button class="hist-del" onclick="deleteHistory(${idx})">✕</button>
+    </div>`;
+  }).join('');
+}
+function fmtTempC(c){return inUnit(c).toFixed(0)+unitLabel();}
+function deleteHistory(idx){
+  const history=loadHistory();history.splice(idx,1);
+  localStorage.setItem(LS_KEY_HISTORY,JSON.stringify(history));
+  renderHistory();
+}
+
+// Auto-save every 30s during cook
+let saveInterval=null;
+function startAutoSave(){saveInterval=setInterval(saveCurrentCook,30000);}
+function stopAutoSave(){clearInterval(saveInterval);}
+
+// ═══════════════════════════════════════════════════════
+// API KEY
+// ═══════════════════════════════════════════════════════
+function saveApiKey(){
+  const v=document.getElementById('apiKeyInput').value.trim();
+  if(!v.startsWith('sk-ant-')){setApiStatus('Key should start with sk-ant-','err');return;}
+  apiKey=v;localStorage.setItem(LS_KEY_API,v);setApiStatus('✓ Key saved','ok');
+  updateInlineKeyBanner();
+  if(convoStep===0)startConvo();
+}
+function setApiStatus(m,c){const el=document.getElementById('apiStatus');el.textContent=m;el.className='api-status '+c;}
+
+function saveResumeKey(){
+  const v=document.getElementById('resumeKeyInput').value.trim();
+  if(!v.startsWith('sk-ant-')){showToast('Key should start with sk-ant-');return;}
+  apiKey=v;localStorage.setItem(LS_KEY_API,v);
+  const mi=document.getElementById('apiKeyInput');if(mi)mi.value=v;
+  setApiStatus('✓ Key saved','ok');
+  document.getElementById('resumeKeyRow').style.display='none';
+  updateInlineKeyBanner();
+  showToast('API key saved — AI advisor ready');
+}
+
+function saveInlineKey(){
+  const v=document.getElementById('inlineKeyInput').value.trim();
+  if(!v.startsWith('sk-ant-')){showToast('Key should start with sk-ant-');return;}
+  apiKey=v;localStorage.setItem(LS_KEY_API,v);
+  const mi=document.getElementById('apiKeyInput');if(mi)mi.value=v;
+  setApiStatus('✓ Key saved','ok');
+  document.getElementById('inlineKeyBanner').classList.remove('visible');
+  showToast('API key saved — AI advisor ready');
+}
+
+function updateInlineKeyBanner(){
+  const needsKey=!apiKey&&!sharingEnabled;
+  const b=document.getElementById('inlineKeyBanner');
+  if(b){
+    b.classList.toggle('visible',needsKey);
+    if(needsKey) setTimeout(()=>b.scrollIntoView({behavior:'smooth',block:'nearest'}),100);
+  }
+  // Also update resume banner key row if visible
+  updateResumeKeyRow();
+}
+
+function updateResumeKeyRow(){
+  const r=document.getElementById('resumeKeyRow');
+  if(r)r.style.display=(!apiKey&&!sharingEnabled)?'block':'none';
+}
+function loadApiKey(){
+  // Check new key first, then fall back to old key name (migration)
+  let k=localStorage.getItem(LS_KEY_API);
+  if(!k) k=localStorage.getItem('el_apikey'); // migrate from EmberLog
+  if(k){
+    apiKey=k;
+    localStorage.setItem(LS_KEY_API,k); // ensure stored under new key
+    const inp=document.getElementById('apiKeyInput');
+    if(inp) inp.value=k;
+    setApiStatus('✓ Key loaded','ok');
+  }
+}
+
+// ── PitLab Central sharing ────────────────────────────────────────────────────
+function loadSharingState(){
+  const pref=localStorage.getItem(LS_KEY_SHARING);
+  sharingEnabled=(pref==='on');
+  pitlabUserId=localStorage.getItem(LS_KEY_USER_ID);
+  updateSharingUI();
+}
+
+function updateSharingUI(){
+  const orb=document.getElementById('shareOrb');
+  const lbl=document.getElementById('shareLabel');
+  const hint=document.getElementById('shareHint');
+  const inBtn=document.getElementById('shareOptInBtn');
+  const outBtn=document.getElementById('shareOptOutBtn');
+  const divider=document.getElementById('apiDivider');
+  const ownPanel=document.getElementById('ownKeyPanel');
+  const status=document.getElementById('shareStatus');
+  if(!orb)return;
+  if(sharingEnabled){
+    orb.className='share-orb on';
+    lbl.textContent='Connected to PitLab Central';
+    hint.textContent='Your cook curves are shared anonymously. Once PitLab Central launches, AI is free ('+PITLAB_AI_LIMIT+' insights/session). Add your own API key in the meantime.';
+    inBtn.style.display='none';
+    outBtn.style.display='block';
+    // Hide own-key section — not needed
+    divider.style.display='none';
+    ownPanel.style.display='none';
+    status.textContent='✓ AI advisor enabled — no key needed';
+    status.className='api-status ok';
+  }else{
+    orb.className='share-orb';
+    lbl.textContent='Not connected to PitLab Central';
+    hint.textContent='Share your cook data anonymously with PitLab Central and get the AI advisor for free.';
+    inBtn.style.display='block';
+    outBtn.style.display='none';
+    divider.style.display='block';
+    ownPanel.style.display='block';
+    if(status.textContent.startsWith('✓ AI')) status.textContent='';
+  }
+}
+
+function optInSharing(){
+  // Generate anonymous user id if first time
+  if(!pitlabUserId){
+    pitlabUserId='pl_'+Math.random().toString(36).slice(2)+Date.now().toString(36);
+    localStorage.setItem(LS_KEY_USER_ID,pitlabUserId);
+  }
+  sharingEnabled=true;
+  localStorage.setItem(LS_KEY_SHARING,'on');
+  updateSharingUI();
+  showToast('Welcome to PitLab Central!');
+  // Start convo if not already started
+  if(convoStep===0) startConvo();
+}
+
+function optOutSharing(){
+  sharingEnabled=false;
+  localStorage.setItem(LS_KEY_SHARING,'off');
+  updateSharingUI();
+  showToast('Sharing disabled — add your own API key to use the AI advisor');
+}
+
+// Build the shareable cook payload — anonymised temp curves + metadata only
+function buildSharePayload(){
+  return{
+    userId: pitlabUserId,
+    cookId,
+    meat: cookCtx.meat,
+    targetC: cookCtx.targetC,
+    pitC: cookCtx.pitC,
+    weightKg: cookCtx.weightKg,
+    smokerType: null, // future field
+    unit,
+    startTime: cookStartTime,
+    endTime: Date.now(),
+    durationMins: Math.round((Date.now()-cookStartTime)/60000),
+    // Temperature curve — rawC only, no timestamps beyond elapsed mins
+    curve: sessionLog.map(e=>({
+      mins: Math.round((new Date(e.ts)-cookStartTime)/60000),
+      rawC: e.rawC
+    })),
+    cookStats: {
+      phase: cookStats.phase,
+      k1: cookStats.k1,
+      k3: cookStats.k3,
+      stallStartC: cookStats.stallStartC,
+      stallDurationMins: cookStats.stallDurationMins,
+    },
+    entries: sessionLog.length,
+    finalTemps: sessionLog[sessionLog.length-1]?.rawC||[],
+    // No PII, no device identifiers beyond the anonymous userId
+  };
+}
+
+async function shareWithCentral(){
+  if(!sharingEnabled||!sessionLog.length) return;
+  try{
+    const payload=buildSharePayload();
+    // POST to PitLab Central — gracefully ignore if unreachable
+    await fetch(PITLAB_CENTRAL_URL+'/api/cooks',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-pitlab-user':pitlabUserId},
+      body:JSON.stringify(payload)
+    }).catch(()=>{}); // fire and forget
+  }catch(_){}
+}
+
+// ═══════════════════════════════════════════════════════
+// CONVERSATIONAL SETUP
+// ═══════════════════════════════════════════════════════
+function addBubble(text,role='ai'){
+  const box=document.getElementById('convoMessages');
+  const el=document.createElement('div');el.className='bubble '+role;el.textContent=text;
+  box.appendChild(el);box.scrollTop=box.scrollHeight;
+}
+function setChips(chips){
+  const el=document.getElementById('quickChips');el.innerHTML='';
+  chips.forEach(c=>{
+    const btn=document.createElement('button');btn.className='chip';btn.textContent=c;
+    btn.onclick=()=>{document.getElementById('convoInput').value=c;sendConvoMsg();};
+    el.appendChild(btn);
+  });
+}
+
+function startConvo(){
+  if(convoStep>0)return;
+  convoStep=1;
+  setTimeout(()=>{
+    addBubble(`Hey! What are you cooking today?`);
+    setChips(MEATS);
+  },350);
+}
+
+function sendConvoMsg(){
+  const inp=document.getElementById('convoInput');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';setChips([]);
+  addBubble(msg,'user');
+  handleConvoStep(msg);
+}
+
+function handleConvoStep(msg){
+  const low=msg.toLowerCase();
+  if(convoStep===1){
+    const match=MEATS.find(m=>low.includes(m.toLowerCase()));
+    cookCtx.meat=match||msg;
+    convoStep=2;
+    // Look up default target in °C, display in user's unit
+    const key=Object.keys(MEAT_TARGETS).find(k=>low.includes(k));
+    const defC=key?MEAT_TARGETS[key]:null;
+    const defDisp=defC?inUnit(defC).toFixed(0):null;
+    setTimeout(()=>{
+      if(defDisp){
+        addBubble(`${cookCtx.meat} — nice. Target is usually around ${defDisp}${unitLabel()}. Going for that, or something different?`);
+        setChips([`${defDisp}${unitLabel()}`, 'Different target']);
+      }else{
+        addBubble(`${cookCtx.meat}. What's your target internal temp?`);
+        setChips(unit==='F'?['165°F','195°F','203°F']:['74°C','90°C','95°C']);
+      }
+    },450);
+
+  }else if(convoStep===2){
+    // Target — could be temp or a finish time like "4pm" or "done by 6:30"
+    const timeMatch=msg.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    const numMatch=parseFloat(msg.replace(/[^\d.]/g,''));
+    if(timeMatch){
+      // Finish time provided
+      let h=parseInt(timeMatch[1]),m2=parseInt(timeMatch[2]||'0');
+      const pm=timeMatch[3].toLowerCase()==='pm';
+      if(pm&&h!==12)h+=12;if(!pm&&h===12)h=0;
+      const ft=new Date();ft.setHours(h,m2,0,0);
+      if(ft<new Date())ft.setDate(ft.getDate()+1); // tomorrow if past
+      cookCtx.finishTime=ft.getTime();
+      convoStep=3;
+      setTimeout(()=>{
+        addBubble(`Got it — I'll work backwards from ${ft.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}. What temp are you running the pit at?`);
+        setChips(unit==='F'?['225°F','250°F','275°F','300°F']:['107°C','121°C','135°C','149°C']);
+      },450);
+    }else if(!isNaN(numMatch)){
+      // Temp in current display unit → store as °C
+      cookCtx.targetC=fromUnit(numMatch);
+      convoStep=3;
+      setTimeout(()=>{
+        addBubble(`Target set. What temp are you running the pit at?`);
+        setChips(unit==='F'?['225°F','250°F','275°F','300°F']:['107°C','121°C','135°C','149°C']);
+      },450);
+    }else{
+      addBubble(`Hmm, I didn't catch that — give me a temp like ${unit==='F'?'203°F':'95°C'}, or a finish time like "5pm".`);
+    }
+
+  }else if(convoStep===3){
+    const num=parseFloat(msg.replace(/[^\d.]/g,''));
+    if(!isNaN(num))cookCtx.pitC=fromUnit(num);
+    convoStep=4;
+    setTimeout(()=>{
+      addBubble(`How much does it weigh? Helps me estimate the timeline. (or skip)`);
+      setChips(['Skip','5 lbs','10 lbs','15 lbs']);
+    },450);
+
+  }else if(convoStep===4){
+    if(!msg.toLowerCase().includes('skip')){
+      const num=parseFloat(msg.replace(/[^\d.]/g,''));
+      cookCtx.weightKg=!isNaN(num)?(unit==='F'?num*0.453592:num):null;
+    }
+    convoStep=5;
+    setTimeout(()=>finishSetup(),400);
+
+  }else if(convoStep===6){
+    // Correcting the default 7:30 PM dinner time
+    const timeMatch=msg.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)/i);
+    if(timeMatch){
+      let h=parseInt(timeMatch[1]),m2=parseInt(timeMatch[2]||'0');
+      const pm=timeMatch[3].toLowerCase()==='pm';
+      if(pm&&h!==12)h+=12;if(!pm&&h===12)h=0;
+      const ft=new Date();ft.setHours(h,m2,0,0);
+      if(ft<new Date())ft.setDate(ft.getDate()+1);
+      cookCtx.finishTime=ft.getTime();
+      addBubble(`Got it — aiming for ${ft.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}.`);
+    }else{
+      addBubble(`Sticking with 7:30 PM then.`);
+    }
+    convoStep=7;
+    setTimeout(()=>{
+      addBubble(`Connect your thermometer when you're ready.`);
+      convoReady=true;
+      document.getElementById('startCookBtn').classList.add('show');
+      setChips([]);
+    },400);
+  }
+}
+
+function defaultFinishTime(){
+  // Default dinner time: 7:30 PM today, or tomorrow if already past
+  const t=new Date();t.setHours(19,30,0,0);
+  if(t<new Date())t.setDate(t.getDate()+1);
+  return t;
+}
+
+function finishSetup(){
+  // If user gave neither a target temp nor a finish time, default to 7:30 PM
+  // and let them know so they can correct it
+  let usedDefault=false;
+  if(!cookCtx.targetC&&!cookCtx.finishTime){
+    const ft=defaultFinishTime();
+    cookCtx.finishTime=ft.getTime();
+    usedDefault=true;
+  }
+  const est=estimateCookTime();
+  const finishStr=cookCtx.finishTime?new Date(cookCtx.finishTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):null;
+  const targetStr=cookCtx.targetC
+    ?`target ${inUnit(cookCtx.targetC).toFixed(0)}${unitLabel()}`
+    :(finishStr?`done by ${finishStr}`:'');
+  const pitStr=cookCtx.pitC?`, pit at ${inUnit(cookCtx.pitC).toFixed(0)}${unitLabel()}`:'';
+  let summary=`${cookCtx.meat}${targetStr?' — '+targetStr:''}${pitStr}.`;
+  if(est) summary+=` Rough estimate: ${est} to go.`;
+  summary+=` I'll watch things and chime in when it matters.`;
+  addBubble(summary);
+  setTimeout(()=>{
+    if(usedDefault){
+      addBubble(`I've assumed dinner at 7:30 PM — just tell me a different time if that doesn't work.`);
+      setChips(['6:00 PM','6:30 PM','7:00 PM','8:00 PM','8:30 PM']);
+      // Listen for a correction before showing the connect button
+      convoStep=6;
+    }else{
+      addBubble(`Connect your thermometer when you're ready.`);
+      convoReady=true;
+      document.getElementById('startCookBtn').classList.add('show');
+      setChips([]);
+    }
+  },600);
+}
+
+// ═══════════════════════════════════════════════════════
+// BBQ REFERENCE TABLE
+// Sources: USDA, AmazingRibs, SmokedBBQSource, Masterbuilt
+// All temps in °C, times in hrs/lb unless noted (fixedHrs for weight-independent cuts)
+// pitScale: multiplier per 10°F above baseline 225°F pit temp (faster = higher)
+// ═══════════════════════════════════════════════════════
+const BBQ_REF={
+  //                                                                              typicalKg = fallback weight if user didn't enter one
+  brisket:         {targetC:95,minC:88, hrsPerLb:1.5, pitScale:0.08,stall:true, stallC:[65,80], typicalKg:5.4},
+  'pork butt':     {targetC:93,minC:88, hrsPerLb:1.75,pitScale:0.08,stall:true, stallC:[65,80], typicalKg:4.5},
+  'pulled pork':   {targetC:93,minC:88, hrsPerLb:1.75,pitScale:0.08,stall:true, stallC:[65,80], typicalKg:4.5},
+  'pork ribs':     {targetC:90,minC:85, fixedHrs:6,   pitScale:0.07,stall:false,stallC:null,    typicalKg:null},
+  'baby back':     {targetC:88,minC:82, fixedHrs:5,   pitScale:0.07,stall:false,stallC:null,    typicalKg:null},
+  'spare ribs':    {targetC:90,minC:85, fixedHrs:6.5, pitScale:0.07,stall:false,stallC:null,    typicalKg:null},
+  'beef ribs':     {targetC:93,minC:88, hrsPerLb:0.75,pitScale:0.07,stall:true, stallC:[65,80], typicalKg:3.6},
+  'chicken':       {targetC:74,minC:74, fixedHrs:4,   pitScale:0.1, stall:false,stallC:null,    typicalKg:null},
+  'chicken thighs':{targetC:79,minC:74, fixedHrs:1.75,pitScale:0.1, stall:false,stallC:null,    typicalKg:null},
+  'whole chicken': {targetC:74,minC:74, fixedHrs:4,   pitScale:0.1, stall:false,stallC:null,    typicalKg:null},
+  'lamb':          {targetC:90,minC:85, hrsPerLb:1.5, pitScale:0.08,stall:true, stallC:[63,77], typicalKg:3.2},
+  'salmon':        {targetC:63,minC:60, fixedHrs:1.5, pitScale:0.1, stall:false,stallC:null,    typicalKg:null},
+};
+
+// Lookup reference entry for current meat (fuzzy match)
+function getMeatRef(){
+  const low=(cookCtx.meat||'').toLowerCase();
+  // Longest key match wins
+  const keys=Object.keys(BBQ_REF).sort((a,b)=>b.length-a.length);
+  const k=keys.find(k=>low.includes(k));
+  return k?BBQ_REF[k]:null;
+}
+
+// Pure heuristic estimate: total cook mins remaining based on reference table
+// Uses current internal temp to determine how far through the cook we already are
+function heuristicMinsRemaining(ref, currentC, pitC, weightKg){
+  const pitF=toF(pitC||107); // default 225°F if unknown
+  const basePitF=225;
+  const pitAdj=Math.max(0.5,1-Math.max(0,(pitF-basePitF)/10)*ref.pitScale);
+
+  // Effective weight: user-supplied, or ref typical, or null (temp-progress path)
+  const effectiveKg=weightKg||(ref.typicalKg||null);
+
+  let totalMins;
+  if(ref.fixedHrs){
+    totalMins=ref.fixedHrs*60*pitAdj;
+  }else if(ref.hrsPerLb&&effectiveKg){
+    const lbs=effectiveKg/0.453592;
+    totalMins=ref.hrsPerLb*lbs*60*pitAdj;
+  }else{
+    // No weight at all — derive from temp progress
+    // Use a minimum progress floor so we don't divide by ~0 at cook start
+    const startC=4;
+    const progress=Math.max(0.05,Math.min(0.95,(currentC-startC)/(ref.targetC-startC)));
+    const elapsed=Math.max(5,(Date.now()-cookStartTime)/60000); // min 5m to avoid wild early estimates
+    const estimatedTotal=elapsed/progress;
+    return Math.min(960,estimatedTotal*(1-progress));
+  }
+
+  // How far through the cook are we based on current meat temp?
+  const startC=4;
+  const tempProgress=Math.max(0.02,Math.min(0.97,(currentC-startC)/(ref.targetC-startC)));
+  const minsRemaining=totalMins*(1-tempProgress);
+  return minsRemaining>5?minsRemaining:null;
+}
+
+function estimateCookTime(){
+  const{meat,pitC,targetC,weightKg,finishTime}=cookCtx;
+  if(finishTime){
+    const mins=Math.round((finishTime-Date.now())/60000);
+    if(mins>0)return`${Math.floor(mins/60)}h ${mins%60}m`;
+  }
+  const ref=getMeatRef();
+  if(!ref||!weightKg&&!ref.fixedHrs)return null;
+  const currentC=temps.find(t=>!isUnplugged(t))??20;
+  const mins=heuristicMinsRemaining(ref,currentC,pitC,weightKg);
+  if(!mins)return null;
+  const h=Math.floor(mins/60),m=Math.round(mins%60);
+  return`~${h}h ${m>0?m+'m':''}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// RESUME / DISCARD
+// ═══════════════════════════════════════════════════════
+function checkResume(){
+  const saved=loadCurrentCook();
+  if(!saved||!saved.cookId)return;
+  const mins=Math.round((Date.now()-saved.cookStartTime)/60000);
+  const meat=saved.cookCtx.meat||'Unknown';
+  const banner=document.getElementById('resumeBanner');
+  banner.style.display='block';
+  updateResumeKeyRow();
+  document.getElementById('resumeDesc').textContent=
+    `${meat} cook started ${mins}m ago (${saved.sessionLog.length} data points saved). Resume?`;
+}
+
+function resumeCook(){
+  const saved=loadCurrentCook();
+  if(!saved)return;
+  // Restore state
+  cookId=saved.cookId;
+  cookStartTime=saved.cookStartTime;
+  cookCtx={...saved.cookCtx};
+  probeNames=saved.probeNames||probeNames;
+  probeCount=saved.probeCount||4;
+  probeActive=saved.probeActive||[false,false,false,false];
+  sessionLog=saved.sessionLog||[];
+  aiCount=saved.aiCount||0;
+  aiMessages=saved.aiMessages||[];
+  aiFlags=saved.aiFlags||{stall:false,wrap:false,approach:false,spike:false,drop:false,milestones:new Set()};
+  if(saved.cookStats) cookStats={...saved.cookStats};
+  logFreqMs=saved.logFreqMs||30000;
+  if(saved.unit)unit=saved.unit;
+
+  document.getElementById('resumeBanner').style.display='none';
+  // Go straight to cook screen and reconnect
+  showScreen('screen-cook');
+  setupCookScreen();
+  // Restore AI messages
+  aiMessages.forEach(m=>addAiMsgDom(m.text,m.type,m.ts));
+  showToast('Cook resumed — reconnect your thermometer');
+  // Re-offer connection
+  setTimeout(connectDevice,800);
+}
+
+function discardAndNew(){
+  clearCurrentCook();
+  document.getElementById('resumeBanner').style.display='none';
+  sessionLog=[];aiMessages=[];aiCount=0;
+  lastDisplayedMins=null;
+  sharedAiCallsThisSession=0;
+  cookStats={k1:null,k3:null,stallStartC:null,stallStartMin:null,stallEndMin:null,stallDurationMins:null,phase:'pre',preSlope:null,postSlope:null};
+  cookId=null;cookStartTime=null;
+  startConvo();
+}
+
+// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
+// PHYSICS-BASED THREE-PHASE BBQ MODEL
+// Based on Dr. Greg Blonder's evaporative cooling research (AmazingRibs.com)
+// and Newton's law of cooling.
+//
+// Phase 1 — Pre-stall heat rise:
+//   dT/dt = k₁ × (Tpit - Tmeat)   [Newton cooling]
+//   k₁ calibrated from observed rise rate and pit delta
+//
+// Phase 2 — Stall (evaporative equilibrium):
+//   dT/dt ≈ 0  (net rate < threshold)
+//   Duration estimated from surface area proxy (weight) and pit temp
+//   Stall temp range: 65–82°C, varies with airflow
+//
+// Phase 3 — Post-stall rise:
+//   dT/dt = k₃ × (Tpit - Tmeat)   k₃ ≈ k₁ × 1.15 (less moisture mass)
+//
+// The model is seeded with reference data, then continuously updated
+// as real observations accumulate. The observed k and stall duration
+// replace reference values once enough data exists.
+// All internal calc in °C
+// ═══════════════════════════════════════════════════════
+// ── Classify each active probe as meat or ambient ──────────────────────────
+// Returns {meatIdxs:[], ambientIdx:int|null}
+// Ambient = lowest active temp that is NOT isInMeat.
+// If all probes look like meat, ambient is null.
+function classifyProbes(){
+  // Pit/smoker is always the HOTTEST active probe (200-275°C).
+  // Meat probes are everything else that is active.
+  // If only one probe is active we treat it as meat (no classification possible).
+  // We also use sessionLog as a fallback so resume works before BLE reconnects.
+  const totalSlots=Math.max(4,probeCount);
+  const active=[];
+  for(let i=0;i<totalSlots-1;i++){
+    // Use live temp, or last logged value if not yet reconnected
+    let t=temps[i];
+    if(isUnplugged(t)&&sessionLog.length){
+      t=sessionLog[sessionLog.length-1].rawC[i];
+    }
+    if(!isUnplugged(t)) active.push({i,t});
+  }
+  if(!active.length) return{meatIdxs:[],ambientIdx:null};
+  if(active.length===1) return{meatIdxs:[active[0].i],ambientIdx:null};
+
+  // Pit = highest temp probe
+  const sorted=[...active].sort((a,b)=>b.t-a.t);
+  const ambientIdx=sorted[0].i; // highest = pit
+  const meatIdxs=active.map(a=>a.i).filter(i=>i!==ambientIdx);
+  return{meatIdxs,ambientIdx};
+}
+
+// Get ambient probe's rate of change (°C/min) and absolute temp
+function getAmbientInfo(ambientIdx){
+  if(ambientIdx===null) return{rateC:null,tempC:null};
+  let tempC=temps[ambientIdx];
+  // On resume before BLE reconnect, use last logged value
+  if(isUnplugged(tempC)&&sessionLog.length){
+    tempC=sessionLog[sessionLog.length-1].rawC[ambientIdx];
+  }
+  if(isUnplugged(tempC)) return{rateC:null,tempC:null};
+  const rateC=getRateC(ambientIdx,8);
+  return{rateC,tempC};
+}
+
+// ── Observed cook stats — updated from live data ─────────────────────────────
+// These refine as the cook progresses, replacing reference priors.
+let cookStats = {
+  k1: null,          // observed pre-stall Newton coefficient (°C/min per °C delta)
+  k3: null,          // observed post-stall Newton coefficient
+  stallStartC: null, // temperature where stall began
+  stallStartMin: null,
+  stallEndMin: null,
+  stallDurationMins: null,
+  phase: 'pre',      // 'pre' | 'stall' | 'post'
+  preSlope: null,    // °C/min observed in pre-stall
+  postSlope: null,   // °C/min observed in post-stall
+};
+
+// Update cookStats from sessionLog — called after each log entry
+function updateCookPhase(bestIdx, pitC){
+  if(sessionLog.length < 4) return;
+  const nowMins = (Date.now() - cookStartTime) / 60000;
+  const ref = getMeatRef();
+
+  // Get recent slope (last 8 points)
+  const recentSlope = getRateC(bestIdx, 8); // °C/min
+  const lastC = sessionLog[sessionLog.length-1].rawC[bestIdx];
+  if(isUnplugged(lastC)) return;
+
+  const stallLo = ref?.stallC?.[0] ?? 64;
+  const stallHi = ref?.stallC?.[1] ?? 82;
+  const stallThreshold = 0.08; // °C/min — below this = stalling
+
+  // Phase state machine
+  if(cookStats.phase === 'pre'){
+    // Track pre-stall slope for k1 calibration
+    if(recentSlope !== null && recentSlope > 0.1 && lastC < stallLo){
+      cookStats.preSlope = recentSlope;
+      const delta = (pitC || 107) - lastC;
+      if(delta > 10) cookStats.k1 = recentSlope / delta;
+    }
+    // Detect stall entry
+    if(recentSlope !== null && Math.abs(recentSlope) < stallThreshold && lastC >= stallLo && lastC <= stallHi){
+      cookStats.phase = 'stall';
+      cookStats.stallStartC = lastC;
+      cookStats.stallStartMin = nowMins;
+    }
+  } else if(cookStats.phase === 'stall'){
+    // Detect stall exit — temp rises meaningfully above stall range or slope recovers
+    const exitedByTemp = lastC > stallHi + 2;
+    const exitedBySlope = recentSlope !== null && recentSlope > stallThreshold * 2;
+    if(exitedByTemp || exitedBySlope){
+      cookStats.phase = 'post';
+      cookStats.stallEndMin = nowMins;
+      cookStats.stallDurationMins = nowMins - (cookStats.stallStartMin || nowMins);
+    }
+  } else if(cookStats.phase === 'post'){
+    // Track post-stall slope for k3
+    if(recentSlope !== null && recentSlope > 0.05){
+      cookStats.postSlope = recentSlope;
+      const delta = (pitC || 107) - lastC;
+      if(delta > 5) cookStats.k3 = recentSlope / delta;
+    }
+  }
+}
+
+// Physics-based time estimate using three-phase model
+// Returns minutes remaining to targetC from currentC
+function physicsMinsRemaining(currentC, targetC, pitC, ref){
+  const pitTemp = pitC || 107; // default 225°F
+  if(currentC >= targetC) return null;
+
+  // Calibrated or reference k values
+  const k1 = cookStats.k1 || (ref?.pitScale ? 0.003 + ref.pitScale * 0.01 : 0.004);
+  const k3 = cookStats.k3 || k1 * 1.15;
+  const stallLo = ref?.stallC?.[0] ?? 65;
+  const stallHi = ref?.stallC?.[1] ?? 80;
+  const hasStall = ref?.stall ?? false;
+
+  // Estimate stall duration: observed > reference > formula
+  // Reference formula: stall lasts longer at lower pit temps and larger surface area
+  // Base: 180 mins at 225°F, shrinks by ~3min per 10°F above that
+  let expectedStallMins = null;
+  if(hasStall){
+    if(cookStats.stallDurationMins !== null){
+      expectedStallMins = cookStats.stallDurationMins; // observed — best estimate
+    } else if(cookStats.phase === 'stall' && cookStats.stallStartMin !== null){
+      // Currently in stall — use current duration as lower bound, add reference remainder
+      const pitF = pitTemp * 9/5 + 32;
+      const refStallTotal = Math.max(60, 210 - (pitF - 225) * 2.5);
+      const elapsed = (Date.now() - cookStartTime) / 60000 - cookStats.stallStartMin;
+      expectedStallMins = Math.max(elapsed + 20, refStallTotal); // at least 20 more mins
+    } else {
+      // Haven't hit stall yet — use reference formula
+      const pitF = pitTemp * 9/5 + 32;
+      expectedStallMins = Math.max(60, 210 - (pitF - 225) * 2.5);
+    }
+  }
+
+  let totalMins = 0;
+
+  // ── Phase 1: current temp → stall start (if not already past it) ─────────
+  if(hasStall && currentC < stallLo && cookStats.phase === 'pre'){
+    // Newton's law: time to heat from currentC to stallLo
+    // T(t) = Tpit - (Tpit - T0) * exp(-k*t)
+    // Solve for t: t = -ln((Tpit-stallLo)/(Tpit-currentC)) / k
+    const deltaRatio = (pitTemp - stallLo) / (pitTemp - currentC);
+    if(deltaRatio > 0 && deltaRatio < 1){
+      totalMins += -Math.log(deltaRatio) / k1;
+    }
+  }
+
+  // ── Phase 2: stall ────────────────────────────────────────────────────────
+  if(hasStall){
+    if(cookStats.phase === 'pre'){
+      totalMins += expectedStallMins || 150;
+    } else if(cookStats.phase === 'stall'){
+      // Remaining stall time
+      const stallElapsed = (Date.now() - cookStartTime) / 60000 - (cookStats.stallStartMin || 0);
+      const remaining = Math.max(0, (expectedStallMins || 150) - stallElapsed);
+      totalMins += remaining;
+    }
+    // phase 'post': stall is done, add nothing
+  }
+
+  // ── Phase 3: stall exit (or current pos if no stall) → target ────────────
+  const postStallStart = (cookStats.phase === 'post') ? currentC : (hasStall ? stallHi : currentC);
+  const effectiveK = (cookStats.phase === 'post') ? k3 : (hasStall ? k3 : k1);
+  if(postStallStart < targetC){
+    const deltaRatio = (pitTemp - targetC) / (pitTemp - postStallStart);
+    if(deltaRatio > 0 && deltaRatio < 1){
+      totalMins += -Math.log(deltaRatio) / effectiveK;
+    } else if(deltaRatio <= 0){
+      // Pit temp below target — estimate linearly from observed post slope
+      const slope = cookStats.postSlope || cookStats.preSlope || 0.3;
+      totalMins += (targetC - postStallStart) / Math.max(0.05, slope);
+    }
+  }
+
+  return totalMins > 2 ? totalMins : null;
+}
+
+function computeProjection(){
+  const ref = getMeatRef();
+  let targetC = cookCtx.targetC || (ref ? ref.targetC : null);
+  const nowMins = (Date.now() - cookStartTime) / 60000;
+
+  // ── PROBE CLASSIFICATION ──────────────────────────────────
+  const{meatIdxs, ambientIdx} = classifyProbes();
+
+  // Pick best meat probe (smoothed median temp)
+  function smoothedTempC(idx){
+    const recent = sessionLog.slice(-5).map(e=>e.rawC[idx]).filter(v=>!isUnplugged(v));
+    if(!recent.length){ const t=temps[idx]; return isUnplugged(t)?null:t; }
+    const sorted = [...recent].sort((a,b)=>a-b);
+    return sorted[Math.floor(sorted.length/2)];
+  }
+
+  let bestIdx=-1, bestTempC=-Infinity;
+  for(const i of meatIdxs){
+    const t=smoothedTempC(i);
+    if(t!==null&&t>bestTempC){bestTempC=t;bestIdx=i;}
+  }
+  if(bestIdx<0){
+    for(let i=0;i<Math.max(4,probeCount)-1;i++){
+      const t=smoothedTempC(i);
+      if(t!==null&&t>bestTempC){bestTempC=t;bestIdx=i;}
+    }
+  }
+  if(bestIdx<0) return null;
+  if(targetC!==null&&bestTempC>=targetC) return null;
+
+  // ── AMBIENT / PIT ─────────────────────────────────────────
+  const ambient = getAmbientInfo(ambientIdx);
+  const effectivePitC = ambient.tempC ?? cookCtx.pitC ?? 107;
+
+  // Pit rate modifier — still useful for near-term adjustments
+  let ambientSpeedFactor = 1.0;
+  if(ambient.rateC!==null&&Math.abs(ambient.rateC)>0.05){
+    const rawFactor = 1 - (ambient.rateC * 0.06);
+    ambientSpeedFactor = Math.max(0.85, Math.min(1.15, rawFactor));
+  }
+
+  // ── UPDATE PHASE MODEL ────────────────────────────────────
+  if(sessionLog.length >= 4) updateCookPhase(bestIdx, effectivePitC);
+
+  // ── PHYSICS MODEL ─────────────────────────────────────────
+  const physMins = targetC ? physicsMinsRemaining(bestTempC, targetC, effectivePitC, ref) : null;
+  const physMinsAdj = physMins !== null ? physMins * ambientSpeedFactor : null;
+
+  // ── LINEAR REGRESSION (stabilisation anchor) ──────────────
+  // Still used to cross-check physics model once we have enough data
+  const pts = sessionLog.slice(-50).map(e=>{
+    const y = e.rawC[bestIdx];
+    if(isUnplugged(y)) return null;
+    return{x:(new Date(e.ts)-cookStartTime)/60000, y};
+  }).filter(Boolean);
+
+  let slope=null, intercept=null, r2=0;
+  if(pts.length>=3){
+    let sw=0,swx=0,swy=0,swxy=0,swx2=0;
+    pts.forEach((p,i)=>{
+      const w = Math.pow(i+1, 1.0); // uniform weighting for stability
+      sw+=w;swx+=w*p.x;swy+=w*p.y;swxy+=w*p.x*p.y;swx2+=w*p.x*p.x;
+    });
+    const den = sw*swx2-swx*swx;
+    if(Math.abs(den)>1e-9){
+      slope = (sw*swxy-swx*swy)/den;
+      intercept = (swy-slope*swx)/sw;
+      const yMean = swy/sw;
+      let ssTot=0,ssRes=0;
+      pts.forEach((p,i)=>{
+        const w = Math.pow(i+1, 1.0);
+        ssTot+=w*(p.y-yMean)**2;
+        ssRes+=w*(p.y-(slope*p.x+intercept))**2;
+      });
+      r2 = ssTot>0?Math.max(0,1-ssRes/ssTot):0;
+    }
+  }
+
+  let regMins = null;
+  if(slope!==null&&slope>0.02&&targetC!==null&&cookStats.phase!=='stall'){
+    // Only use regression when NOT stalling — regression slope during stall is misleading
+    const minsToTarget = (targetC-intercept)/slope;
+    const rm = minsToTarget-nowMins;
+    if(rm>0&&rm<900) regMins = rm * ambientSpeedFactor;
+  }
+
+  // ── HEURISTIC (reference table fallback) ──────────────────
+  const hMinsRaw = ref ? heuristicMinsRemaining(ref, bestTempC, effectivePitC, cookCtx.weightKg) : null;
+  const hMins = hMinsRaw !== null ? hMinsRaw * ambientSpeedFactor : null;
+
+  // ── BLEND: physics > regression > heuristic ───────────────
+  // Physics model weight grows as cook progresses and phase is known
+  const nPts = pts.length;
+  let minsRemaining = null;
+
+  // Physics model is primary once we have reasonable data or phase detected
+  const physConfident = cookStats.k1!==null || cookStats.phase!=='pre' || nPts>=6;
+
+  if(physMinsAdj!==null && regMins!==null && physConfident){
+    // Blend physics (60%) and regression (40%) — regression anchors against model drift
+    minsRemaining = 0.6*physMinsAdj + 0.4*regMins;
+  } else if(physMinsAdj!==null && physConfident){
+    minsRemaining = physMinsAdj;
+  } else if(physMinsAdj!==null && hMins!==null){
+    // Early cook — blend physics and heuristic equally
+    minsRemaining = 0.5*physMinsAdj + 0.5*hMins;
+  } else if(physMinsAdj!==null){
+    minsRemaining = physMinsAdj;
+  } else if(regMins!==null && hMins!==null){
+    const regW = Math.min(0.8, nPts/15);
+    minsRemaining = regW*regMins + (1-regW)*hMins;
+  } else if(regMins!==null){
+    minsRemaining = regMins;
+  } else if(hMins!==null){
+    minsRemaining = hMins;
+  } else if(cookCtx.finishTime){
+    minsRemaining = (cookCtx.finishTime-Date.now())/60000;
+  }
+
+  if(!minsRemaining||minsRemaining<2||minsRemaining>960) return null;
+
+  // Sanity clamp against heuristic (can't be more than 2× or less than 0.4× the reference)
+  if(hMins!==null && nPts>=4){
+    minsRemaining = Math.max(hMins*0.4, Math.min(hMins*2.0, minsRemaining));
+  }
+
+  // Output damping — max 4 mins movement per update
+  if(lastDisplayedMins!==null&&nowMins>5){
+    const maxMove = 4;
+    const delta = minsRemaining - lastDisplayedMins;
+    if(Math.abs(delta)>maxMove) minsRemaining = lastDisplayedMins + (delta>0?maxMove:-maxMove);
+  }
+  lastDisplayedMins = minsRemaining;
+
+  let finishEpoch = Date.now() + minsRemaining*60000;
+  if(!physMinsAdj&&!regMins&&!hMins&&cookCtx.finishTime){
+    finishEpoch = cookCtx.finishTime;
+    minsRemaining = (cookCtx.finishTime-Date.now())/60000;
+  }
+
+  // ── STALL ────────────────────────────────────────────────
+  const isStalling = cookStats.phase === 'stall';
+
+  // ── CONFIDENCE ────────────────────────────────────────────
+  let confPct;
+  const hasPhysics = physMinsAdj!==null;
+  const phaseKnown = cookStats.phase !== 'pre' || cookStats.k1 !== null;
+  if(nPts<2)       confPct = 15;
+  else if(nPts<5)  confPct = hasPhysics ? 30 : 20;
+  else if(nPts<12) confPct = hasPhysics&&phaseKnown ? Math.round(45+r2*15) : Math.round(30+r2*20);
+  else             confPct = hasPhysics&&phaseKnown ? Math.round(55+r2*35) : Math.round(45+r2*30);
+  if(ambient.tempC!==null) confPct = Math.min(95, confPct+5);
+  if(cookStats.stallDurationMins!==null) confPct = Math.min(95, confPct+8); // stall observed = big confidence boost
+  confPct = Math.min(95, confPct);
+
+  let confLabel, confColor;
+  if(isStalling){confPct=Math.min(confPct,35);confLabel='in the stall';confColor='#f5a623';}
+  else if(confPct>=75){confLabel='good';confColor='#22c55e';}
+  else if(confPct>=45){confLabel='fair';confColor='#f5a623';}
+  else{confLabel='low';confColor='#ef4444';}
+
+  // ── PROJECTION CURVE ──────────────────────────────────────
+  // Build curve using physics model if available, else linear extrapolation
+  const steps = Math.min(80, Math.ceil(minsRemaining));
+  const projPoints = [];
+
+  if(physMinsAdj!==null && targetC!==null){
+    // Physics curve — simulate forward through phases
+    let simT = bestTempC;
+    const simPit = effectivePitC;
+    const k = cookStats.phase==='post' ? (cookStats.k3||cookStats.k1||0.004) : (cookStats.k1||0.004);
+    const stallLo = ref?.stallC?.[0]??65;
+    const stallHi = ref?.stallC?.[1]??80;
+    const hasStallMeat = ref?.stall??false;
+    const dtStep = minsRemaining / steps;
+
+    for(let step=0;step<=steps;step++){
+      const x = nowMins + step * dtStep;
+      projPoints.push({x, y:simT});
+      if(simT>=targetC) break;
+      // Simulate next step
+      if(hasStallMeat && simT>=stallLo && simT<=stallHi && cookStats.phase!=='post'){
+        // In stall — tiny rise
+        simT += 0.02 * dtStep;
+      } else {
+        const kEff = (simT > stallHi) ? (cookStats.k3||k*1.15) : k;
+        simT += kEff * (simPit - simT) * dtStep;
+      }
+    }
+  } else {
+    // Linear fallback
+    const effectiveSlope = slope&&slope>0.02 ? slope : (targetC&&minsRemaining>0?(targetC-bestTempC)/minsRemaining:0.3);
+    const effectiveIntercept = bestTempC - effectiveSlope*nowMins;
+    for(let s=0;s<=steps;s++){
+      const x = nowMins + s*(minsRemaining/steps);
+      const y = effectiveSlope*x + effectiveIntercept;
+      if(targetC!==null&&y>targetC+1) break;
+      projPoints.push({x,y});
+    }
+  }
+
+  return{minsRemaining,finishEpoch,projPoints,bestIdx,meatIdxs,ambientIdx,
+         ambient,ambientSpeedFactor,confPct,confLabel,confColor,isStalling,nPts,
+         phase:cookStats.phase, k1:cookStats.k1, stallDuration:cookStats.stallDurationMins};
+}
+
+function fmtETA(mins){
+  const h=Math.floor(mins/60),m=Math.round(mins%60);
+  return h>0?`~${h}h ${m}m`:`~${m}m`;
+}
+
+// ═══════════════════════════════════════════════════════
+// CHART
+// ═══════════════════════════════════════════════════════
+function initChart(){
+  const ctx=document.getElementById('tempChart').getContext('2d');
+  const probeSets=COLORS.map((c,i)=>({
+    label:probeNames[i],data:[],borderColor:c,backgroundColor:c+'10',
+    borderWidth:2,pointRadius:0,tension:.35,fill:false,
+    parsing:{xAxisKey:'x',yAxisKey:'y'}
+  }));
+  const projSet={label:'Projected',data:[],borderColor:'rgba(255,255,255,.2)',
+    backgroundColor:'transparent',borderWidth:1.5,borderDash:[5,4],
+    pointRadius:0,tension:.3,fill:false,parsing:{xAxisKey:'x',yAxisKey:'y'}};
+  const tgtSet={label:'Target',data:[],borderColor:'rgba(245,166,35,.35)',
+    backgroundColor:'transparent',borderWidth:1,borderDash:[2,5],
+    pointRadius:0,fill:false,parsing:{xAxisKey:'x',yAxisKey:'y'}};
+
+  chartData={datasets:[...probeSets,projSet,tgtSet]};
+  if(chart)chart.destroy();
+  chart=new Chart(ctx,{type:'line',data:chartData,options:{
+    responsive:true,maintainAspectRatio:false,animation:false,
+    plugins:{
+      legend:{labels:{color:'#555',font:{family:'DM Mono',size:9},boxWidth:8,
+        filter:item=>item.text!=='Target'&&item.text!=='Projected'}},
+      tooltip:{callbacks:{
+        title:items=>{const v=items[0].parsed.x;const h=Math.floor(v/60),m=Math.floor(v%60);return h>0?`${h}h ${m}m`:`${m}m`;},
+        label:item=>`${item.dataset.label}: ${item.parsed.y!=null?item.parsed.y.toFixed(1)+'°':''}`
+      },backgroundColor:'#1a1a1a',borderColor:'#333',borderWidth:1,
+       titleColor:'#666',bodyColor:'#ede9e1',
+       titleFont:{family:'DM Mono',size:9},bodyFont:{family:'DM Mono',size:10}}
+    },
+    scales:{
+      x:{type:'linear',
+         min:0,max:10,
+         ticks:{color:'#3a3a3a',font:{family:'DM Mono',size:8},maxTicksLimit:7,
+           callback:v=>{const h=Math.floor(v/60),m=Math.floor(v%60);return h>0?`${h}h${m>0?` ${m}m`:''}`:m+'m';}},
+         grid:{color:'#1a1a1a'}},
+      y:{ticks:{color:'#3a3a3a',font:{family:'DM Mono',size:8},callback:v=>v+'°'},
+         grid:{color:'#1a1a1a'}}
+    }
+  }});
+  // Rebuild from sessionLog if resuming
+  if(sessionLog.length){
+    for(let i=0;i<probeCount;i++){
+      chartData.datasets[i].data=sessionLog.map(e=>{
+        const raw=e.rawC[i];
+        const v=!isUnplugged(raw)?inUnit(raw):null;
+        const x=(new Date(e.ts)-cookStartTime)/60000;
+        return v!==null?{x,y:v}:null;
+      }).filter(Boolean);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// PROBE CARDS & ETA CARD
+// ═══════════════════════════════════════════════════════
+function makeEtaCardEl(i){
+  // Build a card element in ETA mode for slot i
+  const d=document.createElement('div');
+  d.id='pc'+i;d.className='eta-card';
+  d.innerHTML=`
+      <div>
+        <div class="eta-label">ESTIMATED FINISH</div>
+        <div class="eta-time" id="etaTime${i}">--:--</div>
+        <div class="eta-rel" id="etaRel${i}">calculating…</div>
+      </div>
+      <div>
+        <div class="eta-conf-bar"><div class="eta-conf-fill" id="etaConf${i}" style="width:0%"></div></div>
+        <div class="eta-conf-lbl" id="etaConfLbl${i}">confidence: --</div>
+        <div class="eta-stall" id="etaStall${i}" style="display:none">⏸ In the stall</div>
+      </div>`;
+  return d;
+}
+
+function buildProbeCards(){
+  const totalSlots=Math.max(4,probeCount);
+  const g=document.getElementById('probesGrid');g.innerHTML='';
+  for(let i=0;i<totalSlots;i++){
+    // Slot 3 (probe 4) is ALWAYS the ETA card — unconditionally, even on resume.
+    // probeActive[i] is reset here so stale saved state can't block it.
+    // It flips back to a probe card only when isInMeat() confirms real meat temp.
+    const defaultEta=(i===totalSlots-1);
+    if(defaultEta){
+      probeActive[i]=false;
+      unplugStreak[i]=0;
+      g.appendChild(makeEtaCardEl(i));
+    }else{
+      const d=document.createElement('div');d.id='pc'+i;
+      d.className='probe-card inactive';
+      d.innerHTML=`<div class="plbl" id="prole${i}">PROBE ${i+1}</div>
+<div class="ptemp" id="pt${i}">---<span class="punit">${unitLabel()}</span></div>
+<div class="ptrend" id="tr${i}"></div>
+<input class="pname" id="pn${i}" value="${probeNames[i]}" placeholder="Name…" onchange="renameProbe(${i},this.value)">`;
+      g.appendChild(d);
+    }
+  }
+}
+
+function renameProbe(i,n){
+  probeNames[i]=n||'Probe '+(i+1);
+  if(chart){chart.data.datasets[i].label=probeNames[i];chart.update('none');}
+  const h=document.getElementById('lh'+i);if(h)h.textContent=probeNames[i].toUpperCase().slice(0,4);
+}
+
+// Check after enough data: if a probe slot never got valid data, turn it into ETA card
+function maybeFlipToEtaCard(){
+  // Flip any probe that has never had a valid reading AND has had
+  // UNPLUG_THRESHOLD consecutive unplugged BLE readings (~5 seconds)
+  const totalSlots=Math.max(4,probeCount);
+  for(let i=0;i<totalSlots;i++){
+    if(probeActive[i])continue;
+    if(unplugStreak[i]<UNPLUG_THRESHOLD)continue;
+    const card=document.getElementById('pc'+i);
+    if(!card||card.classList.contains('eta-card'))continue;
+    // Never received valid data — convert to ETA card
+    const newCard=makeEtaCardEl(i);
+    card.replaceWith(newCard);
+  }
+  refreshEtaCards();
+}
+
+function refreshEtaCards(){
+  const proj=computeProjection();
+  const totalSlots=Math.max(4,probeCount);
+  for(let i=0;i<totalSlots;i++){
+    if(probeActive[i])continue;
+    const et=document.getElementById('etaTime'+i);
+    const er=document.getElementById('etaRel'+i);
+    const ec=document.getElementById('etaConf'+i);
+    const ecl=document.getElementById('etaConfLbl'+i);
+    const es=document.getElementById('etaStall'+i);
+    if(!et)continue;
+    if(proj){
+      const clock=new Date(proj.finishEpoch).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+      et.textContent=clock;
+      er.textContent=fmtETA(proj.minsRemaining)+' remaining';
+      ec.style.width=proj.confPct+'%';
+      ec.style.background=proj.confColor;
+      ecl.textContent='confidence: '+proj.confLabel;
+      if(es)es.style.display=proj.isStalling?'block':'none';
+    }else{
+      // No full projection yet — try a quick heuristic-only estimate from live temps
+      const ref=getMeatRef();
+      const{meatIdxs:fbMeat,ambientIdx:fbAmb}=classifyProbes();
+      // Best live meat temp
+      // Use live temps, falling back to last logged values on resume
+      const lastLog=sessionLog.length?sessionLog[sessionLog.length-1].rawC:[];
+      const getLiveOrLog=i=>{const t=temps[i];return(!isUnplugged(t))?t:(!isUnplugged(lastLog[i])?lastLog[i]:null);};
+      let fbTempC=null;
+      for(const mi of fbMeat){const t=getLiveOrLog(mi);if(t!==null)fbTempC=Math.max(fbTempC??-Infinity,t);}
+      if(fbTempC===null){for(let j=0;j<Math.max(4,probeCount)-1;j++){const t=getLiveOrLog(j);if(t!==null)fbTempC=Math.max(fbTempC??-Infinity,t);}}
+      const rawPit=fbAmb!==null?getLiveOrLog(fbAmb):null;
+      const fbPitC=rawPit??cookCtx.pitC;
+      const fbMins=ref&&fbTempC!==null?heuristicMinsRemaining(ref,fbTempC,fbPitC,cookCtx.weightKg):null;
+
+      if(fbMins!==null&&fbMins>2){
+        // Show heuristic estimate immediately
+        const fbEpoch=Date.now()+fbMins*60000;
+        const clock=new Date(fbEpoch).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+        et.textContent=clock;
+        er.textContent=fmtETA(fbMins)+' remaining';
+        if(ec)ec.style.width='15%';
+        if(ecl)ecl.textContent='confidence: low — refining';
+      }else if(cookCtx.finishTime){
+        const clock=new Date(cookCtx.finishTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+        const minsLeft=(cookCtx.finishTime-Date.now())/60000;
+        et.textContent=clock;
+        er.textContent=minsLeft>0?fmtETA(minsLeft)+' to dinner':'—';
+        if(ec)ec.style.width='10%';
+        if(ecl)ecl.textContent='confidence: low';
+      }else{
+        et.textContent='--:--';
+        er.textContent='connect probes…';
+        if(ec)ec.style.width='0%';
+        if(ecl)ecl.textContent='—';
+      }
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// TEMP DISPLAY
+// ═══════════════════════════════════════════════════════
+function getRateC(idx,win=5){
+  const rel=sessionLog.filter(e=>e.rawC[idx]!==null).slice(-win);
+  if(rel.length<2)return null;
+  const dt=(new Date(rel[rel.length-1].ts)-new Date(rel[0].ts))/60000;
+  if(dt<.1)return null;
+  return(rel[rel.length-1].rawC[idx]-rel[0].rawC[idx])/dt; // °C/min
+}
+
+function updateProbeRoles(){
+  const{meatIdxs,ambientIdx}=classifyProbes();
+  const totalSlots=Math.max(4,probeCount);
+  for(let i=0;i<totalSlots-1;i++){
+    const card=document.getElementById('pc'+i);
+    const roleEl=document.getElementById('prole'+i);
+    if(!card||card.classList.contains('eta-card'))continue;
+    if(!probeActive[i])continue; // still inactive — don't label yet
+    // Remove old role classes
+    card.classList.remove('role-meat','role-pit');
+    if(i===ambientIdx){
+      card.classList.add('role-pit');
+      if(roleEl) roleEl.textContent='PIT TEMP';
+    }else if(meatIdxs.includes(i)){
+      card.classList.add('role-meat');
+      if(roleEl) roleEl.textContent='MEAT';
+    }else{
+      if(roleEl) roleEl.textContent='PROBE '+(i+1);
+    }
+  }
+  // ETA card always gets green role
+  const etaCard=document.getElementById('pc'+(totalSlots-1));
+  if(etaCard&&etaCard.classList.contains('eta-card')){
+    etaCard.classList.add('role-eta');
+  }
+}
+
+function flipToProbeCard(i){
+  const card=document.getElementById('pc'+i);
+  if(!card||!card.classList.contains('eta-card'))return; // already a probe card, nothing to do
+  card.className='probe-card inactive';
+  card.innerHTML=`<div class="plbl">PROBE ${i+1}</div>
+<div class="ptemp" id="pt${i}">---<span class="punit">${unitLabel()}</span></div>
+<div class="ptrend" id="tr${i}"></div>
+<input class="pname" id="pn${i}" value="${probeNames[i]}" placeholder="Label…" onchange="renameProbe(${i},this.value)">`;
+}
+
+function updateDisplay(i,rawC){
+  const val=!isUnplugged(rawC)?inUnit(rawC):null;
+  const card=document.getElementById('pc'+i);
+  const te=document.getElementById('pt'+i);
+  const tr=document.getElementById('tr'+i);
+  if(!card)return;
+  const active=val!==null;
+  card.className='probe-card '+(active?'active':'inactive');
+  if(te)te.innerHTML=(active?dispTemp(val):'---')+`<span class="punit">${unitLabel()}</span>`;
+  if(tr&&active&&sessionLog.length>=3){
+    const r=getRateC(i,4); // °C/min
+    if(r!==null){
+      // Display rate in chosen unit
+      const rDisp=(r*(unit==='F'?1.8:1)).toFixed(1);
+      if(Math.abs(r)<.18){tr.textContent='→ stable';tr.style.color='var(--green)';}
+      else if(r>0){tr.textContent=`↑ +${rDisp}°/min`;tr.style.color='var(--ember)';}
+      else{tr.textContent=`↓ ${rDisp}°/min`;tr.style.color='var(--blue)';}
+    }
+  }
+  if(active&&!alertCooldown){
+    const hi=parseFloat(document.getElementById('alertHigh').value);
+    const lo=parseFloat(document.getElementById('alertLow').value);
+    // Alert inputs are in current unit — compare against display val
+    if(!isNaN(hi)&&val>=hi)fireAlert(`🔴 ${probeNames[i]}: ${dispTemp(val)}${unitLabel()} HIGH`);
+    if(!isNaN(lo)&&val<=lo)fireAlert(`🔵 ${probeNames[i]}: ${dispTemp(val)}${unitLabel()} LOW`);
+  }
+}
+function fireAlert(msg){alertCooldown=true;showToast(msg);if('vibrate'in navigator)navigator.vibrate([200,100,200]);setTimeout(()=>alertCooldown=false,12000);}
+
+// ═══════════════════════════════════════════════════════
+// BLE DATA HANDLER
+// ═══════════════════════════════════════════════════════
+function handleTemp(evt){
+  const data=evt.target.value,count=data.byteLength/2;
+  probeCount=Math.max(probeCount,count);
+  const rawArr=[];
+  for(let i=0;i<count;i++)rawArr[i]=data.getInt16(i*2,true)/10;
+
+  const totalSlots=Math.max(4,probeCount);
+  for(let i=0;i<totalSlots;i++){
+    temps[i]=i<rawArr.length?rawArr[i]:null;
+    const valid=!isUnplugged(temps[i]);
+    const inMeat=valid&&isInMeat(i,temps[i]);
+    if(inMeat){
+      if(!probeActive[i]){
+        // First reading that looks like meat — flip ETA card to probe card (runs once)
+        probeActive[i]=true;
+        flipToProbeCard(i);
+      }
+      unplugStreak[i]=0;
+    } else if(!valid){
+      unplugStreak[i]++;
+    }
+    // Note: ambient temp (valid but not inMeat) doesn't reset streak or activate slot
+    updateDisplay(i,temps[i]);
+  }
+
+  const now=new Date();
+  const lbl=now.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const xMins=(now-cookStartTime)/60000;
+
+  // Push chart data in display unit
+  for(let i=0;i<probeCount;i++){
+    const v=!isUnplugged(temps[i])?inUnit(temps[i]):null;
+    chartData.datasets[i].data.push(v!==null?{x:xMins,y:v}:null);
+  }
+
+  // Log — rawC always in °C
+  if(now-lastLogTs>=logFreqMs){
+    lastLogTs=now;
+    const e={ts:now.toISOString(),label:lbl,rawC:temps.map(t=>(!isUnplugged(t))?t:null)};
+    sessionLog.push(e);addLogRow(e);
+  }
+
+  maybeFlipToEtaCard();
+  updateProbeRoles();
+  // Grow x axis — start at 10m window, expand to fit full cook with small lookahead
+  const xMax=Math.max(10,Math.ceil(xMins/10)*10+5);
+  chart.options.scales.x.max=xMax;
+  updateProjection(xMins);
+  refreshEtaCards();
+  chart.update('none');
+}
+
+function handleBatt(evt){
+  const p=evt.target.value.getUint8(0);
+  document.getElementById('battFill').style.width=p+'%';
+  document.getElementById('battTxt').textContent=p+'%';
+  document.getElementById('battFill').style.background=p<20?'#ef4444':p<50?'#f5a623':'#22c55e';
+}
+
+// ═══════════════════════════════════════════════════════
+// CHART PROJECTION UPDATE
+// ═══════════════════════════════════════════════════════
+function updateProjection(nowMins){
+  const PROJ=4,TGT=5;
+
+  // Target line in display unit
+  if(cookCtx.targetC){
+    const tDisp=inUnit(cookCtx.targetC);
+    chartData.datasets[TGT].data=[{x:0,y:tDisp},{x:nowMins+300,y:tDisp}];
+  }else{chartData.datasets[TGT].data=[];}
+
+  const proj=computeProjection();
+  if(proj){
+    chartData.datasets[PROJ].data=proj.projPoints.map(p=>({x:p.x,y:inUnit(p.y)}));
+    const clock=new Date(proj.finishEpoch).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:true});
+    setEtaBadge(`🕐 Done around ${clock}  (${fmtETA(proj.minsRemaining)} remaining)  · confidence: ${proj.confLabel}`);
+  }else{
+    chartData.datasets[PROJ].data=[];
+    const r=sessionLog.length>5?getRateC(0,8):null;
+    setEtaBadge(r!==null&&Math.abs(r)<0.15&&sessionLog.length>10?'⏸ In the stall — hold tight':null);
+  }
+}
+function setEtaBadge(msg){
+  const el=document.getElementById('etaBadge');if(!el)return;
+  if(!msg){el.style.display='none';return;}
+  el.style.display='flex';el.innerHTML='🕐 '+msg.replace('🕐 ','');
+}
+
+// ═══════════════════════════════════════════════════════
+// LOG TABLE
+// ═══════════════════════════════════════════════════════
+function addLogRow(e){
+  const tb=document.getElementById('logBody');
+  if(tb.children[0]?.cells.length===1)tb.innerHTML='';
+  const tr=document.createElement('tr');
+  // Show in current display unit
+  const cells=e.rawC.slice(0,probeCount).map(v=>
+    v!==null?`<td class="tv">${inUnit(v).toFixed(1)}°</td>`:`<td style="color:var(--text-dim)">--</td>`
+  ).join('');
+  tr.innerHTML=`<td>${e.label}</td>${cells}`;
+  tb.insertBefore(tr,tb.firstChild);
+  if(tb.children.length>300)tb.removeChild(tb.lastChild);
+}
+function updateFreq(){logFreqMs=parseInt(document.getElementById('freqSel').value)*1000;}
+
+// ═══════════════════════════════════════════════════════
+// CONNECT / DISCONNECT
+// ═══════════════════════════════════════════════════════
+async function connectDevice(){
+  if(!navigator.bluetooth){showToast('Use Chrome on Android for Bluetooth');return;}
+  const btn=document.getElementById('startCookBtn');
+  const wasOnCookScreen=document.getElementById('screen-cook').classList.contains('active');
+  if(!wasOnCookScreen){btn.textContent='CONNECTING…';btn.disabled=true;}
+  try{
+    device=await navigator.bluetooth.requestDevice({
+      filters:[{namePrefix:'iBBQ'},{namePrefix:'INKBIRD'},{namePrefix:'BBQ'},{services:[SVC]}],
+      optionalServices:[SVC]
+    });
+    device.addEventListener('gattserverdisconnected',onDisc);
+    server=await device.gatt.connect();
+    const svc=await server.getPrimaryService(SVC);
+    await(await svc.getCharacteristic(C_VER)).writeValue(CRED);
+    try{const b=await svc.getCharacteristic(C_BAT);await b.startNotifications();b.addEventListener('characteristicvaluechanged',handleBatt);}catch(_){}
+    const t=await svc.getCharacteristic(C_TMP);await t.startNotifications();t.addEventListener('characteristicvaluechanged',handleTemp);
+    await(await svc.getCharacteristic(C_CTL)).writeValue(RTCMD);
+    onConn();
+  }catch(err){
+    console.error(err);
+    if(!wasOnCookScreen){btn.textContent='FIRE IT UP →';btn.disabled=false;}
+    if(err.name!=='NotFoundError')showToast('Connection failed: '+err.message);
+  }
+}
+
+async function startCook(){
+  cookId='cook_'+Date.now();
+  cookStartTime=Date.now();
+  lastLogTs=0;
+  logFreqMs=parseInt(document.getElementById('freqSel')?.value||'30')*1000;
+  probeActive=[false,false,false,false];
+  unplugStreak=[0,0,0,0];
+  sessionLog=[];aiMessages=[];aiCount=0;
+  lastDisplayedMins=null;
+  sharedAiCallsThisSession=0;
+  cookStats={k1:null,k3:null,stallStartC:null,stallStartMin:null,stallEndMin:null,stallDurationMins:null,phase:'pre',preSlope:null,postSlope:null};
+  showScreen('screen-cook');
+  setupCookScreen();
+  await connectDevice();
+}
+
+function setupCookScreen(){
+  document.getElementById('statusPill').className='status-pill on';
+  document.getElementById('statusTxt').textContent='CONNECTING…';
+  buildProbeCards();initChart();
+  refreshEtaCards(); // populate ETA card immediately, before first BLE packet
+  updateProbeRoles();
+  updateInlineKeyBanner();
+  for(let i=0;i<4;i++){const h=document.getElementById('lh'+i);if(h)h.textContent=probeNames[i].toUpperCase().slice(0,4);}
+  // Set alert placeholders in current unit
+  const hiPlaceholder=cookCtx.targetC?Math.round(inUnit(cookCtx.targetC)+5)+'':'';
+  const loPlaceholder=cookCtx.pitC?Math.round(inUnit(cookCtx.pitC)-20)+'':'';
+  document.getElementById('alertHigh').placeholder=hiPlaceholder||'e.g. '+(unit==='F'?'275':'135');
+  document.getElementById('alertLow').placeholder=loPlaceholder||'e.g. '+(unit==='F'?'200':'93');
+  aiInterval=setInterval(checkAI,120000);
+  startAutoSave();
+  setTimeout(()=>{if(sessionLog.length>2&&aiCount===0)callAI();},180000);
+}
+
+function onConn(){
+  document.getElementById('statusPill').className='status-pill on';
+  document.getElementById('statusTxt').textContent=device.name||'CONNECTED';
+  document.getElementById('disc-banner').style.display='none';
+  showToast('Connected to '+(device.name||'thermometer'));
+}
+function onDisc(){
+  document.getElementById('statusPill').className='status-pill';
+  document.getElementById('statusTxt').textContent='OFFLINE';
+  document.getElementById('disc-banner').style.display='flex';
+  saveCurrentCook();
+}
+
+function endSession(){
+  stopAutoSave();clearInterval(aiInterval);
+  if(device?.gatt.connected)device.gatt.disconnect();
+  device=null;server=null;
+  archiveCook();shareWithCentral();clearCurrentCook();
+  // Reset
+  sessionLog=[];aiMessages=[];aiCount=0;
+  lastDisplayedMins=null;
+  sharedAiCallsThisSession=0;
+  cookStats={k1:null,k3:null,stallStartC:null,stallStartMin:null,stallEndMin:null,stallDurationMins:null,phase:'pre',preSlope:null,postSlope:null};
+  aiFlags={stall:false,wrap:false,approach:false,spike:false,drop:false,milestones:new Set()};
+  cookCtx={meat:'',targetC:null,pitC:null,weightKg:null,finishTime:null,notes:''};
+  convoStep=0;convoReady=false;probeActive=[false,false,false,false];
+  unplugStreak=[0,0,0,0];
+  cookId=null;cookStartTime=null;
+  document.getElementById('convoMessages').innerHTML='';
+  document.getElementById('aiFeed').innerHTML='<div class="ai-empty"><div class="ai-empty-ico">🔥</div><div>Insights appear as your cook develops.</div></div>';
+  document.getElementById('logBody').innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-dim);padding:14px">No data yet</td></tr>';
+  document.getElementById('aiTally').textContent='0 / 8 insights';
+  const sb=document.getElementById('startCookBtn');sb.classList.remove('show');sb.textContent='FIRE IT UP →';sb.disabled=false;
+  document.getElementById('statusPill').className='status-pill';
+  document.getElementById('statusTxt').textContent='OFFLINE';
+  showScreen('screen-chat');
+  renderHistory();
+  setTimeout(startConvo,300);
+}
+
+// ═══════════════════════════════════════════════════════
+// UNIT TOGGLE — chart re-renders in new unit, data stays in °C
+// ═══════════════════════════════════════════════════════
+function setUnit(u){
+  unit=u;
+  localStorage.setItem(LS_KEY_UNIT,u);
+  document.getElementById('btnF').className='ubtn'+(u==='F'?' active':'');
+  document.getElementById('btnC').className='ubtn'+(u==='C'?' active':'');
+  // Refresh all probe displays
+  for(let i=0;i<probeCount;i++)updateDisplay(i,temps[i]);
+  // Rebuild chart data in new unit (rawC stays °C)
+  if(chart&&cookStartTime){
+    for(let i=0;i<probeCount;i++){
+      chartData.datasets[i].data=sessionLog.map(e=>{
+        const v=inUnit(e.rawC[i]);
+        const x=(new Date(e.ts)-cookStartTime)/60000;
+        return v!==null?{x,y:v}:null;
+      }).filter(Boolean);
+    }
+    updateProjection((Date.now()-cookStartTime)/60000);
+    chart.update('none');
+  }
+  // Refresh log table — rawC→display
+  rebuildLogTable();
+  // Refresh ETA cards
+  refreshEtaCards();
+}
+
+function rebuildLogTable(){
+  const tb=document.getElementById('logBody');
+  if(!sessionLog.length)return;
+  tb.innerHTML='';
+  [...sessionLog].reverse().forEach(e=>addLogRow(e));
+}
+
+// ═══════════════════════════════════════════════════════
+// AI ADVISOR
+// ═══════════════════════════════════════════════════════
+function addAiMsgDom(text,type,ts){
+  const feed=document.getElementById('aiFeed');
+  const empty=feed.querySelector('.ai-empty');if(empty)feed.removeChild(empty);
+  const timeStr=ts?new Date(ts).toLocaleTimeString('en-US',{hour12:true,hour:'numeric',minute:'2-digit'}):
+    new Date().toLocaleTimeString('en-US',{hour12:true,hour:'numeric',minute:'2-digit'});
+  const el=document.createElement('div');el.className='ai-msg';
+  el.innerHTML=`<div class="ai-meta"><span class="ai-tag ${type}">${type.toUpperCase()}</span><span class="ai-ts">${timeStr}</span></div><div class="ai-text">${text}</div>`;
+  feed.appendChild(el);feed.scrollTop=feed.scrollHeight;
+  document.getElementById('aiTally').textContent=`${aiCount} / ${AI_MAX} insights`;
+  if('vibrate'in navigator)navigator.vibrate(60);
+}
+
+function addAiMsg(text,type='insight'){
+  if(aiCount>=AI_MAX)return;
+  aiCount++;
+  const ts=Date.now();
+  aiMessages.push({text,type,ts});
+  addAiMsgDom(text,type,ts);
+  saveCurrentCook();
+}
+
+function setAiThinking(on){
+  aiThinking=on;
+  document.getElementById('aiOrb').className='ai-orb'+(on?' thinking':'');
+  document.getElementById('aiStatusTxt').textContent=on?'ANALYZING…':'WATCHING YOUR COOK';
+}
+
+async function callAI(userQ=null){
+  if(aiThinking)return;
+  if(!userQ&&aiCount>=AI_MAX)return;
+  if(!userQ&&sessionLog.length<4)return;
+  // Route: try PitLab Central first (free), fall back to own key
+  const preferCentral=sharingEnabled;
+  const hasAccess=preferCentral||!!apiKey;
+  if(!hasAccess){
+    // Always show the banner — both on manual ask and auto-analysis
+    updateInlineKeyBanner();
+    if(userQ)showToast('Add your Anthropic API key to use the AI advisor');
+    return;
+  }
+  if(preferCentral&&sharedAiCallsThisSession>=PITLAB_AI_LIMIT&&!apiKey){
+    updateInlineKeyBanner();
+    if(userQ)showToast('Free AI limit reached — add your own key for more');
+    return;
+  }
+
+  const cookMins=cookStartTime?Math.round((Date.now()-cookStartTime)/60000):0;
+  const recent=sessionLog.slice(-20);
+  // Classify probes so AI knows which is ambient vs meat
+  const{meatIdxs:aiMeatIdxs,ambientIdx:aiAmbIdx}=classifyProbes();
+  const aiAmbient=getAmbientInfo(aiAmbIdx);
+
+  const probesSummary=[];
+  const totalAiSlots=Math.max(4,probeCount);
+  for(let i=0;i<totalAiSlots-1;i++){ // skip ETA slot
+    const active=recent.filter(e=>e.rawC[i]!==null);if(!active.length)continue;
+    const cC=active[active.length-1].rawC[i];
+    const r=getRateC(i,6);
+    const role=i===aiAmbIdx?'ambient/pit':(aiMeatIdxs.includes(i)?'meat':'unknown');
+    if(cC===null||cC===undefined) continue;
+    probesSummary.push({
+      name:probeNames[i],
+      role,
+      current:`${inUnit(cC).toFixed(1)}${unitLabel()}`,
+      currentC:+cC.toFixed(1),
+      ratePerMin:r!==null?`${(r*(unit==='F'?1.8:1)).toFixed(2)}${unitLabel()}/min`:null
+    });
+  }
+  const history=sessionLog.slice(-8).map(e=>({
+    t:e.label,
+    p:e.rawC.slice(0,totalAiSlots-1).map(v=>v!==null?`${inUnit(v).toFixed(0)}${unitLabel()}`:null)
+  }));
+
+  // Ambient context for AI
+  const ambientCtx=(aiAmbIdx!==null&&aiAmbient.tempC!==null)?{
+    probe:probeNames[aiAmbIdx],
+    temp:`${inUnit(aiAmbient.tempC).toFixed(1)}${unitLabel()}`,
+    trend:aiAmbient.rateC!==null?(aiAmbient.rateC>0.1?'rising':aiAmbient.rateC<-0.1?'falling':'stable'):'stable',
+    ratePerMin:aiAmbient.rateC!==null?`${(aiAmbient.rateC*(unit==='F'?1.8:1)).toFixed(2)}${unitLabel()}/min`:null
+  }:null;
+
+  const ctxDisp={
+    meat:cookCtx.meat,
+    target:cookCtx.targetC?`${inUnit(cookCtx.targetC).toFixed(0)}${unitLabel()}`:null,
+    pit:cookCtx.pitC?`${inUnit(cookCtx.pitC).toFixed(0)}${unitLabel()}`:null,
+    finishTime:cookCtx.finishTime?new Date(cookCtx.finishTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'}):null,
+    cookMins,probes:probesSummary,ambient:ambientCtx,history
+  };
+
+  const sys=`You are a terse, expert BBQ pit master embedded in a live thermometer app called PitLab.
+All temperatures in your responses must be in ${unitLabel()}. Never mix units.
+Give brief, genuinely useful observations — sound like an experienced pit master, not a chatbot.
+
+For auto-analysis respond ONLY with JSON: {"type":"insight|warning|tip|milestone","text":"..."} or {"type":"none"} if nothing useful right now.
+For user questions respond with {"type":"insight","text":"your answer in 2-4 sentences"}.
+1-3 sentences max. Direct and specific. Types: insight=observation, warning=needs attention, tip=suggested action, milestone=achievement.
+Watch for: stall (plateau ${unit==='F'?'150-170°F':'65-77°C'}, normal, suggest wrapping), fire management (rapid drops/spikes), rate of rise slowing near target, wrap timing.`;
+
+  const userContent=userQ
+    ?`User question: "${userQ}"\n\nCook data: ${JSON.stringify(ctxDisp)}`
+    :`Auto-analyze — return one insight or {"type":"none"}.\nData: ${JSON.stringify({...ctxDisp,insightCount:aiCount,max:AI_MAX})}`;
+
+  setAiThinking(true);
+  console.log('[PitLab AI] calling — key present:', !!apiKey, '| sharing:', sharingEnabled, '| userQ:', !!userQ);
+  try{
+    // Choose endpoint: PitLab Central proxy or direct Anthropic
+    let res;
+    let usedCentral=false;
+    // Try PitLab Central first if opted in and under limit
+    if(preferCentral&&sharedAiCallsThisSession<PITLAB_AI_LIMIT){
+      try{
+        const cr=await fetch(PITLAB_CENTRAL_URL+'/api/ai',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-pitlab-user':pitlabUserId||'anonymous'},
+          body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:[{role:'user',content:userContent}]})
+        });
+        if(cr.ok){res=cr;sharedAiCallsThisSession++;usedCentral=true;}
+      }catch(_){} // Central not live yet — fall through silently
+    }
+    // Fall back to own key (required until Central is live)
+    if(!usedCentral){
+      if(!apiKey) throw new Error('Add your Anthropic API key — PitLab Central is not live yet');
+      res=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:300,system:sys,messages:[{role:'user',content:userContent}]})
+      });
+    }
+    console.log('[PitLab AI] response status:', res.status);
+    if(!res.ok){const err=await res.json().catch(()=>({}));throw new Error(err.error?.message||'API error '+res.status);}
+    const data=await res.json();
+    const raw=data.content?.find(b=>b.type==='text')?.text||'';
+    const m=raw.match(/\{[\s\S]*\}/);
+    if(m){const p=JSON.parse(m[0]);if(p.type&&p.type!=='none'&&p.text)addAiMsg(p.text,p.type);}
+  }catch(e){
+    console.error('[PitLab AI] error:',e);
+    const msg=e.message||'AI error';
+    if(msg.includes('401')||msg.includes('403')||msg.toLowerCase().includes('invalid')||msg.toLowerCase().includes('auth')){
+      updateInlineKeyBanner();
+      showToast('API key rejected — check your key below');
+    }else if(msg.toLowerCase().includes('key')||msg.toLowerCase().includes('central')){
+      updateInlineKeyBanner();
+      showToast('Add your API key below to enable AI');
+    }else{
+      showToast('AI error: '+msg);
+    }
+  }
+  finally{setAiThinking(false);}
+}
+
+function checkAI(){
+  if(aiCount>=AI_MAX||!sessionLog.length||(!apiKey&&!sharingEnabled))return; // need key or sharing
+  const now=Date.now();if(now-aiLastCall<90000)return;
+  let go=false;
+  for(let i=0;i<probeCount;i++){
+    const last=sessionLog[sessionLog.length-1]?.rawC[i];
+    if(isUnplugged(last))continue;
+    const r=getRateC(i,6);
+    if(!aiFlags.stall&&r!==null&&Math.abs(r)<0.15&&last>64&&last<83){aiFlags.stall=true;go=true;}
+    if(!aiFlags.spike&&r!==null&&r>2){aiFlags.spike=true;go=true;}
+    if(!aiFlags.drop&&r!==null&&r<-1.5){aiFlags.drop=true;go=true;}
+    if(!aiFlags.approach&&cookCtx.targetC){
+      if(last>=cookCtx.targetC-5&&last<cookCtx.targetC){aiFlags.approach=true;go=true;}
+    }
+  }
+  const mins=cookStartTime?(now-cookStartTime)/60000:0;
+  for(const m of[20,50,100,160,240]){
+    if(!aiFlags.milestones.has(m)&&mins>=m&&mins<m+3){aiFlags.milestones.add(m);go=true;}
+  }
+  if(go){aiLastCall=now;callAI();}
+}
+
+async function askAdvisor(){
+  const inp=document.getElementById('askInput');
+  const q=inp.value.trim();if(!q)return;
+  if(!apiKey&&!sharingEnabled){
+    updateInlineKeyBanner();
+    showToast('Add your API key below to use the AI advisor');
+    return;
+  }
+  if(!sessionLog.length){showToast('Connect your thermometer first');return;}
+  const btn=document.getElementById('askBtn');btn.disabled=true;inp.value='';
+  aiLastCall=Date.now();await callAI(q);btn.disabled=false;
+}
+
+// ═══════════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════════
+function exportCSV(){
+  if(!sessionLog.length){showToast('No data to export');return;}
+  const u=unitLabel();
+  const hdr=['Time',...probeNames.slice(0,probeCount).map(n=>`${n} (${u})`)];
+  // Export in current display unit — rawC→display
+  const rows=sessionLog.map(e=>[e.label,...e.rawC.slice(0,probeCount).map(v=>v!==null?inUnit(v).toFixed(1):'')].join(','));
+  const a=Object.assign(document.createElement('a'),{
+    href:URL.createObjectURL(new Blob([[hdr.join(','),...rows].join('\n')],{type:'text/csv'})),
+    download:`pitlab-${cookCtx.meat.replace(/\s/g,'-').toLowerCase()||'cook'}-${new Date().toISOString().slice(0,10)}.csv`
+  });
+  a.click();showToast('CSV exported!');
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN / TOAST
+// ═══════════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+let toastTmr;
+function showToast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(toastTmr);toastTmr=setTimeout(()=>t.classList.remove('show'),3400);
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  // Migrate any old EmberLog (el_) storage keys to PitLab (pl_) keys
+  for(const[old,nw] of [['el_apikey','pl_apikey'],['el_unit','pl_unit'],
+      ['el_cook_history','pl_cook_history'],['el_current_cook','pl_current_cook']]){
+    const v=localStorage.getItem(old);
+    if(v&&!localStorage.getItem(nw)){localStorage.setItem(nw,v);}
+  }
+  // Restore unit preference first so everything renders correctly
+  const savedUnit=localStorage.getItem(LS_KEY_UNIT);
+  if(savedUnit){
+    unit=savedUnit;
+    document.getElementById('btnF').className='ubtn'+(unit==='F'?' active':'');
+    document.getElementById('btnC').className='ubtn'+(unit==='C'?' active':'');
+  }
+  loadApiKey();
+  loadSharingState();
+  renderHistory();
+  checkResume();
+  document.getElementById('convoInput').addEventListener('keydown',e=>{if(e.key==='Enter')sendConvoMsg();});
+  document.getElementById('askInput').addEventListener('keydown',e=>{if(e.key==='Enter')askAdvisor();});
+  document.getElementById('inlineKeyInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')saveInlineKey();});
+  document.getElementById('resumeKeyInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')saveResumeKey();});
+  if(apiKey||sharingEnabled)setTimeout(startConvo,500);
+});
+</script>
+</body>
+</html>
